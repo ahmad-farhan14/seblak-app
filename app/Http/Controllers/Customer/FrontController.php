@@ -15,14 +15,28 @@ class FrontController extends Controller
             session(['table_number' => $request->query('table')]);
         }
 
-        // Mock Data (Data Palsu) Menu Favorit agar web tidak kosong
+        // Mock Data Seblak disesuaikan harganya menjadi 0 (Harga dasar sesuai topping)
         $favorites = [
             (object)[
                 'id' => 1,
                 'name' => 'Seblak',
-                'description' => 'Kerupuk, bakso, sosis, dumpling keju, dan ceker ayam dengan kuah jeletot.',
-                'price' => 25000,
-                'image' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'
+                'description' => 'Racikan kerupuk dan bumbu kencur khas. Harga ditentukan dari total topping pilihanmu.',
+                'price' => 0, 
+                'image' => asset('images/seblak.jpg')
+            ],
+            (object)[
+                'id' => 999,
+                'name' => 'Pop Ice Chocolate',
+                'description' => 'Minuman es blender segar dengan rasa coklat yang manis.',
+                'price' => 5000,
+                'image' => asset('images/coklat.jpg')
+            ],
+            (object)[
+                'id' => 998,
+                'name' => 'Pop Ice Mangga',
+                'description' => 'Sensasi es blender rasa buah mangga segar dan manis.',
+                'price' => 5000,
+                'image' => asset('images/mangga.jpg')
             ]
         ];
 
@@ -44,14 +58,14 @@ class FrontController extends Controller
     // 3. Method untuk halaman menu pemesanan utama
     public function menu()
     {
-        // Mock Data Kategori dan Produk Menu Seblak
+        // PERBAIKAN: Data array minuman di bawah sudah disesuaikan langsung tanpa Es Teh Manis & Jeruk berganti Nutrisari
         $categories = [
             (object)[
                 'id' => 1,
                 'name' => 'Seblak',
                 'slug' => 'seblak',
                 'menus' => [
-                    (object)['id' => 1, 'name' => 'Seblak Original', 'description' => 'Menu standar kerupuk, makaroni, dan telur.', 'price' => 15000, 'image' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'],
+                    (object)['id' => 1, 'name' => 'Seblak Original', 'description' => 'Menu standar kerupuk, makaroni, dan telur.', 'price' => 0, 'image' => asset('images/seblak.jpg')],
                 ]
             ],
             (object)[
@@ -59,17 +73,23 @@ class FrontController extends Controller
                 'name' => 'Minuman',
                 'slug' => 'minuman',
                 'menus' => [
-                    (object)['id' => 3, 'name' => 'Es Teh Manis', 'description' => 'Segar dan manis pas untuk meredakan pedas.', 'price' => 5000, 'image' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500'],
-                    (object)['id' => 4, 'name' => 'Es Jeruk Peras', 'description' => 'Dari jeruk peras asli, kaya vitamin C.', 'price' => 7000, 'image' => 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500']
+                    // Es Teh Manis TELAH DIHAPUS TOTAL dari array ini
+                    
+                    // Es Jeruk Peras TELAH DIUBAH menjadi Nutrisari dengan spesifikasi baru
+                    (object)['id' => 4, 'name' => 'Nutrisari', 'description' => 'Minuman varian buah segar instan kaya vitamin C.', 'price' => 5000, 'image' => 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500'],
+                    
+                    (object)['id' => 999, 'name' => 'Pop Ice', 'description' => 'Silakan pilih varian rasa.', 'price' => 5000, 'image' => asset('images/coklat.jpg')],
+                    (object)['id' => 888, 'name' => 'Good Day', 'description' => 'Silakan pilih varian rasa kopi.', 'price' => 5000, 'image' => '/images/good-day.jpg']
                 ]
             ]
         ];
 
         return view('customer.menu', compact('categories'));
     }
+
     public function saveCart(Request $request)
     {
-    session(['customer_cart' => $request->cart]);
-    return response()->json(['status' => 'success']);
+        session(['customer_cart' => $request->cart]);
+        return response()->json(['status' => 'success']);
     }
 }
