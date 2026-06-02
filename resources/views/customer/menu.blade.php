@@ -17,8 +17,10 @@
                         <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Metode Pemesanan</span>
                         <h4 class="text-sm font-black text-gray-800 truncate">
                             {{ session('order_type') === 'dine_in' ? 'Makan di Sini (Dine In)' : 'Bawa Pulang (Take Away)' }}
-                            @if(session()->has('table_number'))
-                                <span class="ml-1.5 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-md text-xs font-black">Meja #{{ session('table_number') }}</span>
+                            @if(session('order_type') === 'dine_in' && session()->has('table_number'))
+                                <span class="ml-1.5 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-md text-xs font-black">
+                                    Meja #{{ session('table_number') }}
+                                </span>
                             @endif
                         </h4>
                     </div>
@@ -174,7 +176,7 @@
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                             <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Pilihan Varian Rasa <span class="text-red-500">*</span></span>
                             <div class="grid grid-cols-2 gap-2.5">
-                                <template x-for="flavor in (strtoupper(selectedMenu.name).includes('POP ICE') ? popIceFlavors : goodDayFlavors)" :key="flavor">
+                                <template x-for="flavor in (strtoupper(selectedMenu.name).includes('POP ICE') ? popIceFlavors : (strtoupper(selectedMenu.name).includes('NUTRISARI') ? nutriSariFlavors : goodDayFlavors))" :key="flavor">
                                     <label class="flex items-center p-3 border rounded-xl cursor-pointer font-bold text-xs text-left transition select-none" :class="selectedFlavor === flavor ? 'border-red-500 bg-red-50 text-red-600' : 'border-gray-100 text-gray-600 bg-white'">
                                         <input type="radio" name="drink_flavor" :value="flavor" x-model="selectedFlavor" class="sr-only">
                                         <span x-text="flavor"></span>
@@ -218,7 +220,6 @@ function menuSystem() {
         totalCalculatedPrice: 0,
         cart: [], 
         
-        // Data 10 Pilihan Topping Prasmanan
         toppingList: [
             { id: 1, name: 'Kerupuk jaat secentong', price: 1000, image: "{{ asset('images/kerupukjaat.jpg') }}" },
             { id: 2, name: 'Kerupuk mawar secentong', price: 1000, image: "{{ asset('images/kerupukmawar.jpg') }}" },
@@ -234,9 +235,10 @@ function menuSystem() {
             { id: 12, name: 'Telur ayam 1pcs', price: 3000, image: "{{ asset('images/telur.jpeg') }}" }
         ],
 
-        // Varian Rasa Minuman
+        // DAFTAR VARIAN RASA RESMI (POP ICE, GOOD DAY, & NUTRISARI TERBARU SINKRON)
         popIceFlavors: ['Chocolate', 'Strawberry', 'Taro', 'Vanilla Blue', 'Mango', 'Avocado'],
         goodDayFlavors: ['Carrebian Nut', 'Mocacinno', 'Coolin', 'Vanilla Latte'],
+        nutriSariFlavors: ['Jeruk Peras', 'American Sweet Orange', 'NutriSari Sweet Mango', 'NutriSari Jeruk Nipis'],
 
         get cartCount() { return this.cart.reduce((sum, item) => sum + item.quantity, 0); },
         get cartTotal() { return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); },
@@ -249,10 +251,13 @@ function menuSystem() {
             this.soup = 'pedas gurih';
             this.totalCalculatedPrice = parseFloat(menu.price);
             
+            // Logika Deteksi Default Rasa Saat PopUp Muncul
             if(this.strtoupper(menu.name).includes('POP ICE')) {
                 this.selectedFlavor = 'Chocolate';
             } else if(this.strtoupper(menu.name).includes('GOOD DAY')) {
                 this.selectedFlavor = 'Mocacinno';
+            } else if(this.strtoupper(menu.name).includes('NUTRISARI')) {
+                this.selectedFlavor = 'Jeruk Peras'; // Default Rasa NutriSari
             } else {
                 this.selectedFlavor = 'Original';
             }
@@ -274,7 +279,6 @@ function menuSystem() {
         addCustomToCart() {
             const isSeblak = this.strtoupper(this.selectedMenu.name).includes('SEBLAK');
             
-            // VALIDASI UTAMA: Jika Seblak, wajib memilih minimal 3 topping
             if (isSeblak && this.selectedToppings.length < 3) {
                 alert('Wajib memilih minimal 3 topping untuk melanjutkan menu Seblak!');
                 return;

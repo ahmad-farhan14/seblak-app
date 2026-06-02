@@ -13,6 +13,7 @@ class FrontController extends Controller
         // Menyimpan nomor meja dari QR Code (?table=X) ke dalam session
         if ($request->has('table')) {
             session(['table_number' => $request->query('table')]);
+            session(['order_type' => 'dine_in']); // Otomatis diset Dine In jika scan meja
         }
 
         // Mock Data Seblak disesuaikan harganya menjadi 0 (Harga dasar sesuai topping)
@@ -43,13 +44,20 @@ class FrontController extends Controller
         return view('customer.landing', compact('favorites'));
     }
 
-    // 2. Method untuk memproses pilihan Dine In / Take Away
+    // 2. Method untuk memproses pilihan Dine In / Take Away secara Dinamis
     public function selectType(Request $request)
     {
+        // Simpan jenis order (dine_in atau take_away) ke session
         session(['order_type' => $request->order_type]);
         
         if ($request->order_type === 'take_away') {
+            // Jika bawa pulang, buang data nomor meja dari memori
             session()->forget('table_number');
+        } else {
+            // SINKRONISASI MEJA: Jika pelanggan input manual nomor meja di form, tangkap di sini
+            if ($request->has('table_number') && !empty($request->table_number)) {
+                session(['table_number' => $request->table_number]);
+            }
         }
         
         return redirect()->route('front.menu');
@@ -58,7 +66,6 @@ class FrontController extends Controller
     // 3. Method untuk halaman menu pemesanan utama
     public function menu()
     {
-        // PERBAIKAN: Data array minuman di bawah sudah disesuaikan langsung tanpa Es Teh Manis & Jeruk berganti Nutrisari
         $categories = [
             (object)[
                 'id' => 1,
@@ -73,11 +80,7 @@ class FrontController extends Controller
                 'name' => 'Minuman',
                 'slug' => 'minuman',
                 'menus' => [
-                    // Es Teh Manis TELAH DIHAPUS TOTAL dari array ini
-                    
-                    // Es Jeruk Peras TELAH DIUBAH menjadi Nutrisari dengan spesifikasi baru
                     (object)['id' => 4, 'name' => 'Nutrisari', 'description' => 'Minuman varian buah segar instan kaya vitamin C.', 'price' => 5000, 'image' => 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500'],
-                    
                     (object)['id' => 999, 'name' => 'Pop Ice', 'description' => 'Silakan pilih varian rasa.', 'price' => 5000, 'image' => asset('images/coklat.jpg')],
                     (object)['id' => 888, 'name' => 'Good Day', 'description' => 'Silakan pilih varian rasa kopi.', 'price' => 5000, 'image' => '/images/good-day.jpg']
                 ]
