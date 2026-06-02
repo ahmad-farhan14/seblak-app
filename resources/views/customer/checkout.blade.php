@@ -1,9 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-10 px-4">
+<div class="min-h-screen bg-gray-50 py-10 px-4" x-data="{ paymentMethod: 'tunai' }">
     <div class="max-w-2xl mx-auto">
         
+        <!-- HEADER -->
         <div class="mb-6 flex items-center space-x-3">
             <a href="{{ route('front.menu') }}" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition">
                 ←
@@ -22,6 +23,7 @@
 
         <div class="grid grid-cols-1 gap-6">
             
+            <!-- RINGKASAN BELANJAAN -->
             <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xs">
                 <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider mb-4">Daftar Menu Kamu</h3>
                 <div class="divide-y divide-gray-50">
@@ -31,15 +33,27 @@
                                 <h4 class="font-bold text-sm text-gray-800 truncate">
                                     {{ $item['name'] }} <span class="text-red-600 font-black ml-0.5">x{{ $item['quantity'] }}</span>
                                 </h4>
-                                <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                                <p class="text-xs text-gray-400 mt-0.5 leading-relaxed font-medium">
                                     @if(!empty($item['options']['toppings']))
                                         Opsi: {{ collect($item['options']['toppings'])->pluck('name')->implode(', ') }}
                                     @elseif(isset($item['options']['flavor']))
-                                        Varian Rasa: {{ $item['options']['flavor'] }}
+                                        @php
+                                            $itemTemp = $item['options']['temp'] ?? 'Ice';
+                                            if (str_contains(strtolower($item['name']), 'pop ice')) {
+                                                $itemTemp = 'Ice';
+                                            }
+                                        @endphp
+                                        Suhu: <span class="text-blue-600 font-bold">{{ $itemTemp }}</span> | Varian Rasa: {{ $item['options']['flavor'] }}
                                     @else
                                         Original
                                     @endif
                                 </p>
+                                
+                                @if(!empty($item['options']['notes']))
+                                    <p class="text-[11px] text-orange-600 bg-orange-50/70 inline-block px-2 py-0.5 rounded font-bold mt-1">
+                                        📝 Notes: "{{ $item['options']['notes'] }}"
+                                    </p>
+                                @endif
                             </div>
                             <span class="text-sm font-bold text-gray-700 whitespace-nowrap">
                                 Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
@@ -51,11 +65,13 @@
                 </div>
             </div>
 
+            <!-- FORM PROSES CHECKOUT UTAMA -->
             <form action="{{ route('cart.process') }}" method="POST" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xs space-y-5">
                 @csrf
                 
                 <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">Data Pengirim</h3>
 
+                <!-- Input Nama Pelanggan -->
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nama Kamu <span class="text-red-500">*</span></label>
                     <input type="text" name="customer_name" required value="{{ old('customer_name') }}"
@@ -66,14 +82,38 @@
                     @enderror
                 </div>
 
+                <!-- Input Catatan Tambahan Global (Opsional) -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Catatan untuk Penjual (Opsional)</label>
-                    <textarea name="notes" rows="2" placeholder="Contoh: Sendok tidak perlu, kuah agak dibanyakin ya..."
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Catatan Tambahan untuk Kasir (Opsional)</label>
+                    <textarea name="notes" rows="2" placeholder="Contoh: Tolong struknya dicetak dua ya mbak..."
                               class="w-full border border-gray-200 bg-gray-50 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:bg-white transition-all placeholder:text-gray-300 font-medium">{{ old('notes') }}</textarea>
+                </div>
+
+                <!-- OPSI PEMILIHAN METODE PEMBAYARAN -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Metode Pembayaran <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Pilihan Tunai / Cash -->
+                        <label class="flex flex-col items-center justify-center p-4 border rounded-2xl cursor-pointer transition select-none" 
+                               :class="paymentMethod === 'tunai' ? 'border-red-500 bg-red-50 text-red-600 font-black shadow-xs' : 'border-gray-200 text-gray-600 bg-white font-medium hover:bg-gray-50/50'">
+                            <input type="radio" name="payment_method" value="tunai" x-model="paymentMethod" class="sr-only">
+                            <span class="text-xl mb-1">💵</span>
+                            <span class="text-xs uppercase tracking-wider">Bayar Tunai</span>
+                        </label>
+                        
+                        <!-- Pilihan QRIS -->
+                        <label class="flex flex-col items-center justify-center p-4 border rounded-2xl cursor-pointer transition select-none" 
+                               :class="paymentMethod === 'qris' ? 'border-red-500 bg-red-50 text-red-600 font-black shadow-xs' : 'border-gray-200 text-gray-600 bg-white font-medium hover:bg-gray-50/50'">
+                            <input type="radio" name="payment_method" value="qris" x-model="paymentMethod" class="sr-only">
+                            <span class="text-xl mb-1">📱</span>
+                            <span class="text-xs uppercase tracking-wider">QRIS / Non-Tunai</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="border-t border-gray-100 my-2"></div>
 
+                <!-- Informasi Total Tagihan -->
                 <div class="flex justify-between items-center py-2">
                     <div>
                         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Total Pembayaran</span>
@@ -86,6 +126,7 @@
                     </span>
                 </div>
 
+                <!-- TOMBOL EXECUTE SUBMIT -->
                 @if(count($cart) > 0)
                     <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-md shadow-red-600/10 cursor-pointer text-center">
                         🚀 Selesai & Kirim Ke Kasir

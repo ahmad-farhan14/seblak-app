@@ -43,19 +43,46 @@ class AdminController extends Controller
             
             foreach ($order->items as $dbItem) {
                 $options = json_decode($dbItem->notes, true) ?? [];
-                
-                // Ambil nama menu dasar dari database
                 $dbMenuName = $dbItem->menu ? $dbItem->menu->name : 'Menu';
-                $realMenuName = $dbMenuName;
                 
                 $toppingsList = [];
+                $cleanFlavor = '';
 
-                // PROTECTION LOGIC: Jika opsi flavor mengandung varian jeruk/mango/nipis, paksa namanya jadi Nutrisari
-                if (isset($options['flavor']) && !empty($options['flavor'])) {
-                    $flv = strtolower($options['flavor']);
-                    if (str_contains($flv, 'peras') || str_contains($flv, 'orange') || str_contains($flv, 'mango') || str_contains($flv, 'mangga') || str_contains($flv, 'nipis')) {
+                // 1. Ambil & Bersihkan Input Varian Rasa dari JSON jika ada
+                $flavorInput = isset($options['flavor']) ? strtolower($options['flavor']) : '';
+
+                // 2. FIXED CROSS-MAPPING GUARD (Koreksi Klasifikasi Brand vs Rasa)
+                if (!empty($flavorInput)) {
+                    $isBuah = (str_contains($flavorInput, 'peras') || str_contains($flavorInput, 'orange') || str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga') || str_contains($flavorInput, 'nipis'));
+                    $isKopi = (str_contains($flavorInput, 'cappuccino') || str_contains($flavorInput, 'mocacinno') || str_contains($flavorInput, 'moka') || str_contains($flavorInput, 'vanilla'));
+                    $isPopIceFlavor = (str_contains($flavorInput, 'taro') || str_contains($flavorInput, 'avocado') || str_contains($flavorInput, 'permen') || str_contains($flavorInput, 'bubble') || str_contains($flavorInput, 'chocolate') || str_contains($flavorInput, 'coklat'));
+
+                    // Tentukan Nama Menu Utama yang Akurat
+                    if ($isBuah) {
                         $realMenuName = 'Nutrisari';
+                    } elseif ($isKopi) {
+                        $realMenuName = 'Good Day';
+                    } elseif ($isPopIceFlavor) {
+                        $realMenuName = 'Pop Ice';
+                    } else {
+                        $realMenuName = $dbMenuName;
                     }
+
+                    // 3. MAPPING TEKS VARIAN RASA UNTUK DASHBOARD KASIR
+                    if (str_contains($flavorInput, 'peras')) $cleanFlavor = "Jeruk Peras";
+                    elseif (str_contains($flavorInput, 'american') || str_contains($flavorInput, 'sweet_orange')) $cleanFlavor = "American Sweet Orange";
+                    elseif (str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga')) $cleanFlavor = "Sweet Mango";
+                    elseif (str_contains($flavorInput, 'nipis')) $cleanFlavor = "Jeruk Nipis";
+                    elseif (str_contains($flavorInput, 'mocacinno')) $cleanFlavor = "Mocacinno";
+                    elseif (str_contains($flavorInput, 'cappuccino')) $cleanFlavor = "Cappuccino";
+                    elseif (str_contains($flavorInput, 'chocolate') || str_contains($flavorInput, 'coklat')) $cleanFlavor = "Chocolate";
+                    else $cleanFlavor = ucwords(str_replace(['_', '-'], ' ', $options['flavor']));
+
+                    if ($cleanFlavor !== 'Original') {
+                        $toppingsList[] = "Rasa: " . $cleanFlavor;
+                    }
+                } else {
+                    $realMenuName = $dbMenuName;
                 }
 
                 // A. KUSTOMISASI SEBLAK
@@ -66,29 +93,7 @@ class AdminController extends Controller
                     }
                 }
 
-                // B. KUSTOMISASI MINUMAN (MAPPING RASA RESMI)
-                if (isset($options['flavor']) && !empty($options['flavor'])) {
-                    $flavorInput = strtolower($options['flavor']);
-                    $cleanFlavor = '';
-
-                    if (str_contains($flavorInput, 'peras') || str_contains($flavorInput, 'jeruk_peras')) {
-                        $cleanFlavor = "Jeruk Peras";
-                    } elseif (str_contains($flavorInput, 'american') || str_contains($flavorInput, 'sweet_orange')) {
-                        $cleanFlavor = "American Sweet Orange";
-                    } elseif (str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga')) {
-                        $cleanFlavor = "NutriSari Sweet Mango";
-                    } elseif (str_contains($flavorInput, 'nipis')) {
-                        $cleanFlavor = "NutriSari Jeruk Nipis";
-                    } else {
-                        $cleanFlavor = ucwords(str_replace(['_', '-'], ' ', $options['flavor']));
-                    }
-
-                    if ($cleanFlavor !== 'Original') {
-                        $toppingsList[] = "Rasa: " . $cleanFlavor;
-                    }
-                }
-
-                // C. TOPPING TAMBAHAN
+                // B. TOPPING TAMBAHAN
                 if (!empty($options['toppings']) && is_array($options['toppings'])) {
                     foreach ($options['toppings'] as $topping) {
                         $toppingsList[] = $topping['name'] ?? $topping;
@@ -117,7 +122,6 @@ class AdminController extends Controller
             $orderArray['customer_name'] = $customerName;
             $orderArray['items'] = $items;
             
-            // Perbaikan penomoran meja dinamis untuk monitor kasir
             if ($order->order_type === 'take_away') {
                 $orderArray['table_display'] = 'Take Away';
             } else {
@@ -144,22 +148,17 @@ class AdminController extends Controller
         return redirect()->route('admin.dashboard');
     }
 
-    // === METHOD REPORT (FIXED: SUDAH MENDUKUNG FILTER RENTANG TANGGAL & RESET) ===
     public function report(Request $request)
     {
         if (!session()->has('is_kasir')) { 
             return redirect()->route('admin.login'); 
         }
 
-        // 1. Inisialisasi query dasar untuk order yang berstatus selesai
         $query = Order::with('items.menu')->where('status', 'completed');
 
-        // 2. Tangkap input rentang tanggal dari request form blade
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        // 3. Eksekusi filter jika kasir memilih tanggal awal dan akhir
-        // Jika kasir menekan tombol RESET, parameter di atas kosong dan otomatis menampilkan seluruh data
         if (!empty($startDate) && !empty($endDate)) {
             $query->whereBetween('created_at', [
                 $startDate . ' 00:00:00', 
@@ -167,10 +166,8 @@ class AdminController extends Controller
             ]);
         }
 
-        // 4. Ambil data akhir diurutkan dari yang terbaru
         $orders = $query->orderBy('created_at', 'desc')->get();
         
-        // 5. Hitung variabel akumulasi ringkasan untuk Summary Cards
         $totalOrder = $orders->count(); 
         $totalPendapatan = $orders->sum('total_price');
 

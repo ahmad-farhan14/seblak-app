@@ -8,7 +8,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between shadow-xs">
                 <div class="flex items-center space-x-3 min-w-0">
-                    <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
                         <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
@@ -25,7 +25,7 @@
                         </h4>
                     </div>
                 </div>
-                <a href="{{ route('landing') }}" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-3.5 py-2 rounded-xl transition flex-shrink-0">Ubah</a>
+                <a href="{{ route('landing') }}" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-3.5 py-2 rounded-xl transition shrink-0">Ubah</a>
             </div>
         </div>
         
@@ -73,7 +73,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
+                            <div class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
                                 <img src="{{ $menu->image }}" class="w-full h-full object-cover">
                             </div>
                         </div>
@@ -83,10 +83,11 @@
         @endforeach
     </div>
 
+    {{-- BAR NOTIFIKASI KERANJANG SEMENTARA --}}
     <div x-show="cartCount > 0" class="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 z-50 w-auto md:w-80" style="display: none;" x-transition>
         <div class="bg-gray-900 text-white rounded-2xl p-4 shadow-xl flex items-center justify-between gap-4 border border-white/10">
             <div class="flex items-center space-x-3 min-w-0">
-                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center relative flex-shrink-0 shadow-md shadow-red-600/30">
+                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center relative shrink-0 shadow-md shadow-red-600/30">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                     </svg>
@@ -97,10 +98,11 @@
                     <span class="text-sm font-black text-red-400 whitespace-nowrap" x-text="formatPrice(cartTotal)"></span>
                 </div>
             </div>
-            <button @click="window.location.href='{{ route('cart.checkout') }}'" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition uppercase tracking-wider flex-shrink-0 shadow-sm cursor-pointer">Check Out</button>
+            <button @click="window.location.href='{{ route('cart.checkout') }}'" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition uppercase tracking-wider shrink-0 shadow-sm cursor-pointer">Check Out</button>
         </div>
     </div>
 
+    {{-- MODAL POPUP KUSTOMISASI --}}
     <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs p-2 sm:p-4 flex items-end sm:items-center justify-center" x-transition x-cloak style="display: none;">
         <div class="bg-white w-full max-w-xl rounded-t-3xl sm:rounded-2xl h-[85vh] sm:max-h-[80vh] flex flex-col shadow-2xl relative" @click.away="modalOpen = false">
             
@@ -114,6 +116,7 @@
 
             <div class="overflow-y-auto p-4 sm:p-6 space-y-5 flex-1 bg-gray-50/50">
                 
+                {{-- BLOK A: OPSI KHUSUS SEBLAK --}}
                 <template x-if="selectedMenu.name && strtoupper(selectedMenu.name).includes('SEBLAK')">
                     <div class="space-y-5">
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
@@ -151,16 +154,16 @@
                                 </span>
                             </div>
                             
-                            <div class="divide-y divide-gray-50 max-h-[220px] overflow-y-auto">
+                            <div class="divide-y divide-gray-50 max-h-55 overflow-y-auto">
                                 <template x-for="top in toppingList" :key="top.id">
                                     <label class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-gray-50/50 transition select-none">
                                         <div class="flex items-center space-x-3 min-w-0">
-                                            <div class="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 border border-orange-100 flex-shrink-0">
+                                            <div class="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 border border-orange-100 shrink-0">
                                                 <img :src="top.image" :alt="top.name" class="w-full h-full object-cover">
                                             </div>
                                             <span class="text-xs sm:text-sm font-semibold text-gray-700 truncate" x-text="top.name"></span>
                                         </div>
-                                        <div class="flex items-center space-x-3 flex-shrink-0">
+                                        <div class="flex items-center space-x-3 shrink-0">
                                             <span class="text-xs text-gray-400 font-bold" x-text="formatPrice(top.price)"></span>
                                             <input type="checkbox" :checked="selectedToppings.some(t => t.id === top.id)" @change="toggleTopping(top)" class="w-4 h-4 text-red-600 rounded border-gray-300 accent-red-600">
                                         </div>
@@ -171,8 +174,37 @@
                     </div>
                 </template>
 
+                {{-- BLOK B: OPSI KHUSUS MINUMAN (SINKRON SUHU FIXED ICE / PILIHAN) --}}
                 <template x-if="selectedMenu.name && !strtoupper(selectedMenu.name).includes('SEBLAK')">
                     <div class="space-y-5">
+                        
+                        {{-- OPSI PEMILIHAN SUHU MINUMAN --}}
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+                            <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Suhu Minuman <span class="text-red-500">*</span></span>
+                            
+                            {{-- Kondisi 1: Jika Menu adalah POP ICE (DIKUNCI MATI FIXED ICE) --}}
+                            <template x-if="strtoupper(selectedMenu.name).includes('POP ICE')">
+                                <div class="grid grid-cols-1">
+                                    <div class="flex items-center justify-center p-3 border border-blue-500 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs sm:text-sm text-center shadow-inner">
+                                        🧊 Dingin Saja (Fixed Ice Only)
+                                    </div>
+                                </div>
+                            </template>
+
+                            {{-- Kondisi 2: Selain Pop Ice (Good Day & Nutrisari Bisa Bebas Memilih) --}}
+                            <template x-if="!strtoupper(selectedMenu.name).includes('POP ICE')">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center justify-center p-3 border rounded-xl cursor-pointer font-bold text-xs sm:text-sm text-center transition" :class="drinkTemp === 'Ice' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600 bg-white'">
+                                        <input type="radio" name="drink_temp" value="Ice" x-model="drinkTemp" class="sr-only"> 🧊 Dingin (Ice)
+                                    </label>
+                                    <label class="flex items-center justify-center p-3 border rounded-xl cursor-pointer font-bold text-xs sm:text-sm text-center transition" :class="drinkTemp === 'Hot' ? 'border-red-500 bg-red-50 text-red-600' : 'border-gray-200 text-gray-600 bg-white'">
+                                        <input type="radio" name="drink_temp" value="Hot" x-model="drinkTemp" class="sr-only"> ☕ Panas (Hot)
+                                    </label>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- OPSI PILIHAN RASA MINUMAN --}}
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                             <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Pilihan Varian Rasa <span class="text-red-500">*</span></span>
                             <div class="grid grid-cols-2 gap-2.5">
@@ -184,9 +216,11 @@
                                 </template>
                             </div>
                         </div>
+
                     </div>
                 </template>
 
+                {{-- CATATAN TAMBAHAN UNTUK DAPUR --}}
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                     <label class="block font-bold text-gray-800 text-xs sm:text-sm mb-2">Catatan Tambahan untuk Dapur</label>
                     <textarea x-model="notes" rows="2" class="w-full border border-gray-100 rounded-xl p-3 text-xs focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition placeholder:text-gray-300" placeholder="Contoh: Es batu sedikit saja, kuah banjir..."></textarea>
@@ -216,6 +250,7 @@ function menuSystem() {
         spicy: 3,
         notes: '',
         selectedFlavor: 'Original',
+        drinkTemp: 'Ice', // Default dingin
         selectedToppings: [], 
         totalCalculatedPrice: 0,
         cart: [], 
@@ -235,7 +270,6 @@ function menuSystem() {
             { id: 12, name: 'Telur ayam 1pcs', price: 3000, image: "{{ asset('images/telur.jpeg') }}" }
         ],
 
-        // DAFTAR VARIAN RASA RESMI (POP ICE, GOOD DAY, & NUTRISARI TERBARU SINKRON)
         popIceFlavors: ['Chocolate', 'Strawberry', 'Taro', 'Vanilla Blue', 'Mango', 'Avocado'],
         goodDayFlavors: ['Carrebian Nut', 'Mocacinno', 'Coolin', 'Vanilla Latte'],
         nutriSariFlavors: ['Jeruk Peras', 'American Sweet Orange', 'NutriSari Sweet Mango', 'NutriSari Jeruk Nipis'],
@@ -244,20 +278,21 @@ function menuSystem() {
         get cartTotal() { return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); },
         
         openCustomizeModal(menu) {
-            this.selectedMenu = menu;
+            this.selectedMenu = Object.assign({}, menu); 
             this.notes = '';
             this.selectedToppings = [];
             this.spicy = 3;
             this.soup = 'pedas gurih';
             this.totalCalculatedPrice = parseFloat(menu.price);
+            this.drinkTemp = 'Ice'; // Reset ke default Ice tiap kali buka modal
             
-            // Logika Deteksi Default Rasa Saat PopUp Muncul
             if(this.strtoupper(menu.name).includes('POP ICE')) {
                 this.selectedFlavor = 'Chocolate';
+                this.drinkTemp = 'Ice'; // Paksa Pop Ice selalu Ice
             } else if(this.strtoupper(menu.name).includes('GOOD DAY')) {
                 this.selectedFlavor = 'Mocacinno';
             } else if(this.strtoupper(menu.name).includes('NUTRISARI')) {
-                this.selectedFlavor = 'Jeruk Peras'; // Default Rasa NutriSari
+                this.selectedFlavor = 'Jeruk Peras';
             } else {
                 this.selectedFlavor = 'Original';
             }
@@ -283,10 +318,26 @@ function menuSystem() {
                 alert('Wajib memilih minimal 3 topping untuk melanjutkan menu Seblak!');
                 return;
             }
+
+            if (!isSeblak) {
+                const flv = this.selectedFlavor.toLowerCase();
+                const isBuah = (flv.includes('peras') || flv.includes('orange') || flv.includes('mango') || flv.includes('mangga') || flv.includes('nipis'));
+                const isKopi = (flv.includes('cappuccino') || flv.includes('mocacinno') || flv.includes('moka') || flv.includes('vanilla') || flv.includes('latte') || flv.includes('coolin') || flv.includes('nut'));
+                const isPopIceFlavor = (flv.includes('taro') || flv.includes('avocado') || flv.includes('permen') || flv.includes('bubble') || flv.includes('chocolate') || flv.includes('strawberry') || flv.includes('blue'));
+
+                if (isBuah) {
+                    this.selectedMenu.name = 'Nutrisari';
+                } else if (isKopi) {
+                    this.selectedMenu.name = 'Good Day';
+                } else if (isPopIceFlavor) {
+                    this.selectedMenu.name = 'Pop Ice';
+                    this.drinkTemp = 'Ice'; // Mengunci mutlak pesanan Pop ice di array belanjaan ke 'Ice'
+                }
+            }
             
             const cartItem = {
                 id: 'custom-' + Date.now(),
-                menu_id: this.selectedMenu.id,
+                menu_id: this.selectedMenu.id, 
                 name: this.selectedMenu.name,
                 price: this.totalCalculatedPrice,
                 quantity: 1,
@@ -294,6 +345,7 @@ function menuSystem() {
                     soup: isSeblak ? this.soup : null,
                     spicy: isSeblak ? this.spicy : null,
                     flavor: !isSeblak ? this.selectedFlavor : null,
+                    temp: !isSeblak ? this.drinkTemp : null, // Masukkan data Ice/Hot
                     toppings: isSeblak ? [...this.selectedToppings] : [],
                     notes: this.notes
                 }

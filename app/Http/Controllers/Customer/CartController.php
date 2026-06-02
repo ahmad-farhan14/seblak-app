@@ -30,8 +30,10 @@ class CartController extends Controller
 
     public function processOrder(Request $request)
     {
+        $request->withHtmlSecure = true; // Flag proteksi teks
         $request->validate([
-            'customer_name' => 'required|string|max:255',
+            'customer_name'  => 'required|string|max:255',
+            'payment_method' => 'required|string|in:tunai,qris'
         ]);
 
         $cart = session('cart', []);
@@ -39,21 +41,21 @@ class CartController extends Controller
             return redirect()->route('landing')->with('error', 'Keranjang belanja kamu kosong!');
         }
 
-        // Ambil data metode dan meja dari session user
         $orderType = session('order_type', 'dine_in');
         $tableNumber = session('table_number', null);
         
-        $customerNotes = "Nama Pelanggan: " . $request->customer_name;
+        // Gabungkan Informasi Nama Pelanggan, Metode Pembayaran, dan Catatan Tambahan ke kolom notes
+        $paymentLabel = $request->payment_method === 'qris' ? 'QRIS (Non-Tunai)' : 'Tunai (Cash)';
+        $customerNotes = "Nama Pelanggan: " . $request->customer_name . " | Pembayaran: " . $paymentLabel;
+        
         if ($request->notes) {
             $customerNotes .= " | Catatan Tambahan: " . $request->notes;
         }
 
-        // Hitung total harga belanjaan asli
         $totalPrice = collect($cart)->reduce(function ($sum, $item) {
             return $sum + ($item['price'] * $item['quantity']);
         }, 0);
 
-        // Buat kode invoice acak yang unik
         $orderNumber = 'INV-' . strtoupper(uniqid());
 
         try {
@@ -69,35 +71,52 @@ class CartController extends Controller
                 'notes'        => $customerNotes
             ]);
 
-            // 2. Simpan item ke tabel order_items (DENGAN LOGIKA PENYELAMAT ID DATABASE)
+            // 2. Simpan item ke tabel order_items
             foreach ($cart as $item) {
                 $options = $item['options'] ?? [];
                 $menuId = (int)$item['menu_id'];
 
-                // === LOGIKA PENYELAMAT INTEGRITY CONSTRAINT (ANTI ERROR 1452) ===
-                // Jika menu_id bernilai 999 atau 888 (ID tiruan/hardcode), alihkan ke ID menu minuman riil di database kamu
-                if ($menuId === 999 || $menuId === 888) {
-                    // Cari menu minuman apa saja di tabel menus yang namanya bukan Seblak
-                    $fallbackMenu = Menu::where('name', 'not like', '%Seblak%')->first();
+                if (isset($options['flavor']) && !empty($options['flavor'])) {
+                    $flv = strtolower($options['flavor']);
                     
-                    // Gunakan ID menu asli dari database, jika kosong default ke ID 1 atau ID lainnya yang aman
+                    $isBuah = (str_contains($flv, 'peras') || str_contains($flv, 'orange') || str_contains($flv, 'mango') || str_contains($flv, 'mangga') || str_contains($flv, 'nipis'));
+                    $isKopi = (str_contains($flv, 'cappuccino') || str_contains($flv, 'mocacinno') || str_contains($flv, 'moka') || str_contains($flv, 'vanilla') || str_contains($flv, 'latte') || str_contains($flv, 'coolin') || str_contains($flv, 'nut'));
+                    $isPopIceFlavor = (str_contains($flv, 'taro') || str_contains($flv, 'avocado') || str_contains($flv, 'permen') || str_contains($flv, 'bubble') || str_contains($flv, 'chocolate') || str_contains($flv, 'strawberry') || str_contains($flv, 'blue'));
+
+                    if ($isBuah) {
+                        $matchedMenu = Menu::where('name', 'like', '%Nutrisari%')->first();
+                    } elseif ($isKopi) {
+                        $matchedMenu = Menu::where('name', 'like', '%Good Day%')->first();
+                    } elseif ($isPopIceFlavor) {
+                        $matchedMenu = Menu::where('name', 'like', '%Pop Ice%')->first();
+                        $options['temp'] = 'Ice';
+                    } else {
+                        $matchedMenu = null;
+                    }
+
+                    if ($matchedMenu) {
+                        $menuId = $matchedMenu->id;
+                    }
+                }
+
+                if ($menuId === 999 || $menuId === 888) {
+                    $fallbackMenu = Menu::where('name', 'not like', '%Seblak%')->first();
                     $menuId = $fallbackMenu ? $fallbackMenu->id : 1; 
                 }
 
                 OrderItem::create([
                     'order_id'    => $order->id,
-                    'menu_id'     => $menuId, // Diisikan ID sah yang terdaftar di tabel menus database kamu
+                    'menu_id'     => $menuId, 
                     'qty'         => $item['quantity'] ?? 1,
                     'price'       => $item['price'],
                     'soup'        => $options['soup'] ?? null,
                     'spicy_level' => isset($options['spicy']) ? (int)$options['spicy'] : 0,
-                    'notes'       => json_encode($options) // Kustomisasi rasa asli (seperti Taro) tetap tersimpan aman di sini
+                    'notes'       => json_encode($options) 
                 ]);
             }
 
             DB::commit();
 
-            // Kosongkan keranjang di session karena order sudah sukses diproses database
             session()->forget('cart');
 
             return redirect()->route('order.success', $order->id)

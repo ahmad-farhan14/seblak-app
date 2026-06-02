@@ -94,7 +94,6 @@
                                 </span>
                             </td>
                             
-                            {{-- KOLOM TIPE: Diberi whitespace-nowrap biar lurus tidak patah ke bawah --}}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold
                                     {{ $order->order_type === 'dine_in' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700' }}">
@@ -102,7 +101,6 @@
                                 </span>
                             </td>
                             
-                            {{-- KOLOM MEJA: Pembersihan teks acak database, layout lurus font-bold --}}
                             <td class="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
                                 @if($order->order_type === 'take_away' || $order->table_number === 'Take Away')
                                     <span class="text-gray-400 font-bold uppercase tracking-wider text-xs">Take Away</span>
@@ -113,25 +111,44 @@
                                 @endif
                             </td>
                             
-                            <td class="px-6 py-4 text-gray-600 space-y-2 min-w-[200px]">
+                            <td class="px-6 py-4 text-gray-600 space-y-3 min-w-50">
                                 @foreach ($order->items as $item)
                                     @php
                                         $options = json_decode($item->notes, true) ?? [];
                                         $dbMenuName = $item->menu ? $item->menu->name : 'Menu';
-                                        $realMenuName = $dbMenuName;
+                                        
+                                        $flavorInput = isset($options['flavor']) ? strtolower($options['flavor']) : '';
+                                        $tempInput = isset($options['temp']) ? $options['temp'] : 'Ice'; // Ambil data suhu, default Ice
                                         $flavorDisplay = '';
+                                        $realMenuName = $dbMenuName;
 
-                                        if (isset($options['flavor']) && !empty($options['flavor'])) {
-                                            $flv = strtolower($options['flavor']);
-                                            if (str_contains($flv, 'peras') || str_contains($flv, 'orange') || str_contains($flv, 'mango') || str_contains($flv, 'mangga') || str_contains($flv, 'nipis')) {
+                                        if (!empty($flavorInput)) {
+                                            $isBuah = (str_contains($flavorInput, 'peras') || str_contains($flavorInput, 'orange') || str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga') || str_contains($flavorInput, 'nipis'));
+                                            $isKopi = (str_contains($flavorInput, 'cappuccino') || str_contains($flavorInput, 'mocacinno') || str_contains($flavorInput, 'moka') || str_contains($flavorInput, 'vanilla'));
+                                            $isPopIceFlavor = (str_contains($flavorInput, 'taro') || str_contains($flavorInput, 'avocado') || str_contains($flavorInput, 'permen') || str_contains($flavorInput, 'bubble') || str_contains($flavorInput, 'chocolate') || str_contains($flavorInput, 'coklat'));
+
+                                            if ($isBuah) {
                                                 $realMenuName = 'Nutrisari';
+                                            } elseif ($isKopi) {
+                                                $realMenuName = 'Good Day';
+                                            } elseif ($isPopIceFlavor) {
+                                                $realMenuName = 'Pop Ice';
+                                                $tempInput = 'Ice'; // Proteksi mutlak: Pop Ice di laporan selalu Ice
                                             }
 
-                                            if (str_contains($flv, 'peras')) $flavorDisplay = "Jeruk Peras";
-                                            elseif (str_contains($flv, 'american')) $flavorDisplay = "American Sweet Orange";
-                                            elseif (str_contains($flv, 'mango') || str_contains($flv, 'mangga')) $flavorDisplay = "NutriSari Sweet Mango";
-                                            elseif (str_contains($flv, 'nipis')) $flavorDisplay = "NutriSari Jeruk Nipis";
+                                            if (str_contains($flavorInput, 'peras')) $flavorDisplay = "Jeruk Peras";
+                                            elseif (str_contains($flavorInput, 'american')) $flavorDisplay = "American Sweet Orange";
+                                            elseif (str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga')) $flavorDisplay = "Sweet Mango";
+                                            elseif (str_contains($flavorInput, 'nipis')) $flavorDisplay = "Jeruk Nipis";
+                                            elseif (str_contains($flavorInput, 'mocacinno')) $flavorDisplay = "Mocacinno";
+                                            elseif (str_contains($flavorInput, 'cappuccino')) $flavorDisplay = "Cappuccino";
+                                            elseif (str_contains($flavorInput, 'chocolate') || str_contains($flavorInput, 'coklat')) $flavorDisplay = "Chocolate";
                                             else $flavorDisplay = ucwords(str_replace(['_', '-'], ' ', $options['flavor']));
+                                            
+                                            // Tempelkan status suhu di samping rasa di tabel rekap laporan (Contoh: Mocacinno (Hot))
+                                            if (!empty($tempInput)) {
+                                                $flavorDisplay .= " (" . $tempInput . ")";
+                                            }
                                         }
 
                                         $extras = [];
@@ -143,9 +160,11 @@
                                                 $extras[] = $top['name'] ?? $top;
                                             }
                                         }
+
+                                        $perMenuNote = $options['notes'] ?? '';
                                     @endphp
 
-                                    <div class="text-sm leading-tight">
+                                    <div class="text-sm leading-tight pb-1">
                                         <span class="font-bold text-gray-800">{{ $realMenuName }}</span>
                                         <span class="text-red-500 font-black ml-0.5">x{{ $item->qty }}</span>
                                         
@@ -156,16 +175,20 @@
                                         @if(!empty($extras))
                                             <span class="block text-[11px] text-gray-400 font-medium mt-0.5">Opsi: {{ implode(', ', $extras) }}</span>
                                         @endif
+
+                                        @if(!empty($perMenuNote))
+                                            <span class="block text-[11px] text-orange-600 font-bold mt-0.5 bg-orange-50/60 px-1.5 py-0.5 rounded inline-block">
+                                                📝 Catatan: "{{ $perMenuNote }}"
+                                            </span>
+                                        @endif
                                     </div>
                                 @endforeach
                             </td>
                             
-                            {{-- KOLOM TOTAL: Ditambahkan whitespace-nowrap --}}
                             <td class="px-6 py-4 font-black text-green-600 whitespace-nowrap text-base">
                                 Rp {{ number_format($order->total_price, 0, ',', '.') }}
                             </td>
                             
-                            {{-- KOLOM TANGGAL: Ditambahkan whitespace-nowrap --}}
                             <td class="px-6 py-4 text-gray-400 font-medium whitespace-nowrap text-xs">
                                 {{ $order->created_at->format('d/m/Y H:i') }}
                             </td>
