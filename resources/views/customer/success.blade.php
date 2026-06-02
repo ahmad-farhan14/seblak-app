@@ -1,27 +1,48 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center items-center px-4 py-12">
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-gray-100">
-        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">✓</div>
-        <h2 class="text-2xl font-black text-gray-900 mb-2">Pesanan Terkirim!</h2>
-        <p class="text-sm text-gray-400 mb-6">Pesanan atas nama <span class="font-bold text-gray-700">{{ $customerName }}</span> berhasil disimpan.</p>
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full bg-white p-8 rounded-3xl border border-gray-100 shadow-xs text-center">
+        
+        <div class="w-16 h-16 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-sm">
+            🎉
+        </div>
 
-        @if($paymentMethod === 'QRIS')
-            <div class="space-y-4 border p-4 bg-gray-50 rounded-2xl">
-                <h3 class="font-black text-base text-gray-800">Silakan Scan QRIS</h3>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PembayaranSeblak" class="mx-auto border p-2 rounded-xl bg-white shadow-xs">
-                <p class="text-xs text-gray-500">Buka aplikasi e-wallet kamu untuk melakukan pembayaran.</p>
-            </div>
-        @else
-            <div class="space-y-4 border p-6 bg-yellow-50/50 border-yellow-100 rounded-2xl">
-                <h3 class="font-black text-base text-yellow-800">Bayar Tunai di Kasir</h3>
-                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto text-3xl">💰</div>
-                <p class="text-xs text-gray-600">Silakan sebutkan namamu ke kasir untuk menyelesaikan pembayaran tunai.</p>
-            </div>
-        @endif
+        <h2 class="text-2xl font-black text-gray-900 tracking-tight">Pesanan Berhasil Dibuat!</h2>
+        <p class="text-sm text-gray-400 mt-2">Silakan tunjukkan nomor nota ini ke kasir untuk pembayaran atau menunggu hidangan Anda.</p>
 
-        <a href="/" class="mt-8 block w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg transition-all">Kembali ke Menu Utama</a>
+        <div class="bg-gray-50 rounded-2xl p-4 my-6 border border-gray-100 space-y-3 text-left">
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-400 font-bold uppercase tracking-wider">No. Invoice</span>
+                <span class="font-mono font-black text-gray-700 bg-gray-200 px-2 py-0.5 rounded">
+                    {{ $order->order_number }}
+                </span>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-400 font-bold uppercase tracking-wider">Tipe Order</span>
+                <span class="font-black text-gray-800">
+                    {{ $order->order_type === 'dine_in' ? '🍽️ Makan Di Sini' : '🥡 Bawa Pulang' }}
+                </span>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-gray-400 font-bold uppercase tracking-wider">Lokasi / Meja</span>
+                <span class="font-black text-orange-600">
+                    {{ $order->table_number }}
+                </span>
+            </div>
+            <div class="border-t border-dashed border-gray-200 my-2"></div>
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-gray-900 font-black">Total Tagihan</span>
+                <span class="font-black text-red-600 text-base">
+                    Rp {{ number_format($order->total_price, 0, ',', '.') }}
+                </span>
+            </div>
+        </div>
+
+        <a href="{{ route('landing') }}" class="block w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 active:scale-[0.98] shadow-md shadow-red-600/10 cursor-pointer text-center">
+            🏠 Kembali ke Beranda
+        </a>
+
     </div>
 </div>
 @endsection
