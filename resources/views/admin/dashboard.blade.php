@@ -29,8 +29,15 @@
         </div>
 
         {{-- DAFTAR KARTU ANTREAN (GRID LAYOUT) --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="antrean-container">
             @forelse ($orders as $order)
+                @php
+                    // Ambil status dan ubah jadi lowercase untuk keamanan pengecekan logika warna badge
+                    $currentStatus = strtolower($order['status'] ?? 'pending');
+                    $isStatusDiproses = in_array($currentStatus, ['diproses', 'processing', 'process']);
+                    $isStatusPending = in_array($currentStatus, ['pending', 'menunggu']);
+                @endphp
+
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between p-6 space-y-4">
                     
                     {{-- Bagian Atas: Invoice & Status Banner --}}
@@ -39,8 +46,8 @@
                             #{{ $order['order_number'] }}
                         </span>
                         <span class="text-xs font-black px-2.5 py-1 rounded-md 
-                            {{ $order['status'] === 'Diproses' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-red-50 text-red-700 border border-red-100' }}">
-                            ⚡ {{ $order['status'] }}
+                            {{ $isStatusDiproses ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-red-50 text-red-700 border border-red-100' }}">
+                            ⚡ {{ $isStatusDiproses ? 'Diproses' : 'Pending' }}
                         </span>
                     </div>
 
@@ -59,7 +66,7 @@
                             @endphp
 
                             @if($isQris)
-                                <span class="shrink-0 text-[10px] font-extrabold bg-green-100 text-green-700 border border-green-200 px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1 animate-pulse">
+                                <span class="shrink-0 text-[10px] font-extrabold bg-green-100 text-green-700 border border-green-200 px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1 {{ $isStatusPending ? 'animate-pulse' : '' }}">
                                     📱 QRIS
                                 </span>
                             @elseif($isTunai)
@@ -89,7 +96,7 @@
                                 $tempInput = isset($itemNotes['temp']) ? $itemNotes['temp'] : ''; 
 
                                 $allToppingsText = isset($item['custom']['toppings']) ? strtolower(implode(' ', $item['custom']['toppings'])) : '';
-                                $currentName = $item['name'];
+                                $currentName = $item['name'] ?? 'Menu';
 
                                 if (!empty($flavorInput) || !empty($allToppingsText)) {
                                     $fullFlavorText = $flavorInput . ' ' . $allToppingsText;
@@ -120,12 +127,12 @@
                             <div class="py-3 flex justify-between items-start gap-4">
                                 <div class="min-w-0 flex-1">
                                     <h4 class="font-bold text-sm text-gray-800 truncate">
-                                        {{ $currentName }} <span class="text-red-600 font-black ml-0.5">x{{ $item['quantity'] ?? $item['qty'] }}</span>
+                                        {{ $currentName }} <span class="text-red-600 font-black ml-0.5">x{{ $item['qty'] }}</span>
                                     </h4>
                                     
                                     @if(!empty($finalToppings))
                                         <p class="text-[11px] text-gray-400 font-medium mt-0.5 leading-tight">
-                                            Opsi: {{ implode(', ', $finalToppings) }}
+                                            Opsi: {{ is_array($finalToppings) ? implode(', ', $finalToppings) : $finalToppings }}
                                         </p>
                                     @endif
 
@@ -136,7 +143,7 @@
                                     @endif
                                 </div>
                                 <span class="text-xs font-bold text-gray-600 whitespace-nowrap pt-0.5">
-                                    Rp {{ number_format($item['price'] * ($item['quantity'] ?? $item['qty']), 0, ',', '.') }}
+                                    Rp {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}
                                 </span>
                             </div>
                         @endforeach
@@ -153,10 +160,9 @@
                             </span>
                         </div>
 
-                        {{-- TAMPILKAN CATATAN TRANSAKSI JIKA ADA REKAP GLOBAL DARI FORM --}}
+                        {{-- TAMPILKAN CATATAN TRANSAKSI REKAP GLOBAL --}}
                         @if(!empty($order['notes']))
                             @php
-                                // Bersihkan string panjang agar tidak memakan ruang box antrean kasir berlebihan
                                 $cleanNotesText = str_replace('Nama Pelanggan: ' . $order['customer_name'] . ' | ', '', $order['notes']);
                             @endphp
                             <p class="text-[10px] text-gray-400 font-medium leading-tight bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -166,7 +172,7 @@
 
                         <form action="{{ route('admin.order.update', $order['id']) }}" method="POST" class="w-full">
                             @csrf
-                            @if ($order['status'] === 'Pending')
+                            @if ($isStatusPending)
                                 <input type="hidden" name="action" value="proses">
                                 <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider transition duration-200 active:scale-[0.99] cursor-pointer shadow-md shadow-orange-500/10">
                                     🧑‍🍳 Mulai Proses Masak
@@ -192,4 +198,19 @@
 
     </div>
 </div>
+
+{{-- JAVASCRIPT AUTO REFRESH POLLING ELEMEN CONTAINER --}}
+<script>
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.getElementById('antrean-container').innerHTML;
+                document.getElementById('antrean-container').innerHTML = newContent;
+            })
+            .catch(err => console.warn('Gagal memuat otomatis data antrean:', err));
+    }, 5000); // Mengecek ke database setiap 5 detik
+</script>
 @endsection

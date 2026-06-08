@@ -117,7 +117,7 @@
             <div class="overflow-y-auto p-4 sm:p-6 space-y-5 flex-1 bg-gray-50/50">
                 
                 {{-- BLOK A: OPSI KHUSUS SEBLAK --}}
-                <template x-if="selectedMenu.name && strtoupper(selectedMenu.name).includes('SEBLAK')">
+                <div x-show="selectedMenu.name && strtoupper(selectedMenu.name).includes('SEBLAK')">
                     <div class="space-y-5">
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                             <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Pilihan Kuah <span class="text-red-500">*</span></span>
@@ -138,12 +138,7 @@
                             </div>
                             <input type="range" min="0" max="5" x-model="spicy" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 focus:outline-none">
                             <div class="flex justify-between text-[10px] text-gray-400 px-1 mt-1 font-medium">
-                                <span>0</span>
-                                <span>1</span>
-                                <span>2</span>
-                                <span>3</span>
-                                <span>4</span>
-                                <span>5</span>
+                                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
                             </div>
                         </div>
 
@@ -162,7 +157,7 @@
                             <div class="divide-y divide-gray-50 max-h-55 overflow-y-auto">
                                 <template x-for="group in groupedToppings()" :key="group.name">
                                     <div class="pt-3">
-                                        <div class="px-4 pb-3 text-xs font-black uppercase tracking-wide text-gray-500 bg-gray-50">{{-- category header --}}<span x-text="group.name"></span></div>
+                                        <div class="px-4 pb-3 text-xs font-black uppercase tracking-wide text-gray-500 bg-gray-50"><span x-text="group.name"></span></div>
                                         <template x-for="top in group.toppings" :key="top.id">
                                             <div class="flex items-center justify-between p-3.5 hover:bg-gray-50/50 transition select-none">
                                                 <div class="flex items-center space-x-3 min-w-0">
@@ -186,27 +181,23 @@
                             </div>
                         </div>
                     </div>
-                </template>
+                </div>
 
-                {{-- BLOK B: OPSI KHUSUS MINUMAN (SINKRON SUHU FIXED ICE / PILIHAN) --}}
-                <template x-if="selectedMenu.name && !strtoupper(selectedMenu.name).includes('SEBLAK')">
+                {{-- BLOK B: OPSI KHUSUS MINUMAN --}}
+                <div x-show="selectedMenu.name && !strtoupper(selectedMenu.name).includes('SEBLAK')">
                     <div class="space-y-5">
-                        
-                        {{-- OPSI PEMILIHAN SUHU MINUMAN --}}
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                             <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Suhu Minuman <span class="text-red-500">*</span></span>
                             
-                            {{-- Kondisi 1: Jika Menu adalah POP ICE (DIKUNCI MATI FIXED ICE) --}}
-                            <template x-if="strtoupper(selectedMenu.name).includes('POP ICE')">
+                            <div x-show="strtoupper(selectedMenu.name).includes('POP ICE')">
                                 <div class="grid grid-cols-1">
                                     <div class="flex items-center justify-center p-3 border border-blue-500 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs sm:text-sm text-center shadow-inner">
                                         🧊 Dingin Saja (Fixed Ice Only)
                                     </div>
                                 </div>
-                            </template>
+                            </div>
 
-                            {{-- Kondisi 2: Selain Pop Ice (Good Day & Nutrisari Bisa Bebas Memilih) --}}
-                            <template x-if="!strtoupper(selectedMenu.name).includes('POP ICE')">
+                            <div x-show="!strtoupper(selectedMenu.name).includes('POP ICE')">
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="flex items-center justify-center p-3 border rounded-xl cursor-pointer font-bold text-xs sm:text-sm text-center transition" :class="drinkTemp === 'Ice' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600 bg-white'">
                                         <input type="radio" name="drink_temp" value="Ice" x-model="drinkTemp" class="sr-only"> 🧊 Dingin (Ice)
@@ -215,10 +206,9 @@
                                         <input type="radio" name="drink_temp" value="Hot" x-model="drinkTemp" class="sr-only"> ☕ Panas (Hot)
                                     </label>
                                 </div>
-                            </template>
+                            </div>
                         </div>
 
-                        {{-- OPSI PILIHAN RASA MINUMAN --}}
                         <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                             <span class="block font-bold text-gray-800 text-xs sm:text-sm mb-3">Pilihan Varian Rasa <span class="text-red-500">*</span></span>
                             <div class="grid grid-cols-2 gap-2.5">
@@ -230,11 +220,10 @@
                                 </template>
                             </div>
                         </div>
-
                     </div>
-                </template>
+                </div>
 
-                {{-- CATATAN TAMBAHAN UNTUK DAPUR --}}
+                {{-- CATATAN TAMBAHAN --}}
                 <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
                     <label class="block font-bold text-gray-800 text-xs sm:text-sm mb-2">Catatan Tambahan untuk Dapur</label>
                     <textarea x-model="notes" rows="2" class="w-full border border-gray-100 rounded-xl p-3 text-xs focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition placeholder:text-gray-300" placeholder="Contoh: Es batu sedikit saja, kuah banjir..."></textarea>
@@ -264,10 +253,11 @@ function menuSystem() {
         spicy: 3,
         notes: '',
         selectedFlavor: 'Original',
-        drinkTemp: 'Ice', // Default dingin
+        drinkTemp: 'Ice', 
         selectedToppings: [], 
         totalCalculatedPrice: 0,
-        cart: [], 
+        
+        cart: @json(session('cart', [])), 
         
         toppingList: [
             { id: 1, name: 'Kerupuk jaat secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kerupukjaat.jpg') }}" },
@@ -296,8 +286,8 @@ function menuSystem() {
         goodDayFlavors: ['Carrebian Nut', 'Mocacinno', 'Coolin', 'Vanilla Latte'],
         nutriSariFlavors: ['Jeruk Peras', 'American Sweet Orange', 'NutriSari Sweet Mango', 'NutriSari Jeruk Nipis'],
 
-        get cartCount() { return this.cart.reduce((sum, item) => sum + item.quantity, 0); },
-        get cartTotal() { return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); },
+        get cartCount() { return this.cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0); },
+        get cartTotal() { return this.cart.reduce((sum, item) => sum + (parseFloat(item.price) * (parseInt(item.quantity) || 1)), 0); },
         
         openCustomizeModal(menu) {
             this.selectedMenu = Object.assign({}, menu); 
@@ -306,11 +296,11 @@ function menuSystem() {
             this.spicy = 3;
             this.soup = 'pedas gurih';
             this.totalCalculatedPrice = parseFloat(menu.price);
-            this.drinkTemp = 'Ice'; // Reset ke default Ice tiap kali buka modal
+            this.drinkTemp = 'Ice'; 
             
             if(this.strtoupper(menu.name).includes('POP ICE')) {
                 this.selectedFlavor = 'Chocolate';
-                this.drinkTemp = 'Ice'; // Paksa Pop Ice selalu Ice
+                this.drinkTemp = 'Ice'; 
             } else if(this.strtoupper(menu.name).includes('GOOD DAY')) {
                 this.selectedFlavor = 'Mocacinno';
             } else if(this.strtoupper(menu.name).includes('NUTRISARI')) {
@@ -331,17 +321,13 @@ function menuSystem() {
             const groups = {};
             this.toppingList.forEach(top => {
                 const category = top.category || 'Lainnya';
-                if (!groups[category]) {
-                    groups[category] = [];
-                }
+                if (!groups[category]) { groups[category] = []; }
                 groups[category].push(top);
             });
             return Object.keys(groups).map(name => ({ name, toppings: groups[name] }));
         },
 
-        getTotalToppingUnits() {
-            return this.selectedToppings.reduce((sum, item) => sum + item.qty, 0);
-        },
+        getTotalToppingUnits() { return this.selectedToppings.reduce((sum, item) => sum + item.qty, 0); },
 
         changeToppingQty(topping, delta) {
             const index = this.selectedToppings.findIndex(t => t.id === topping.id);
@@ -349,12 +335,8 @@ function menuSystem() {
             const nextQty = currentQty + delta;
 
             if (nextQty <= 0) {
-                if (index > -1) {
-                    this.selectedToppings.splice(index, 1);
-                }
-                if (currentQty > 0) {
-                    this.totalCalculatedPrice -= topping.price * currentQty;
-                }
+                if (index > -1) { this.selectedToppings.splice(index, 1); }
+                if (currentQty > 0) { this.totalCalculatedPrice -= topping.price * currentQty; }
                 return;
             }
 
@@ -374,33 +356,31 @@ function menuSystem() {
                 return;
             }
 
+            let menuName = this.selectedMenu.name;
             if (!isSeblak) {
                 const flv = this.selectedFlavor.toLowerCase();
                 const isBuah = (flv.includes('peras') || flv.includes('orange') || flv.includes('mango') || flv.includes('mangga') || flv.includes('nipis'));
                 const isKopi = (flv.includes('cappuccino') || flv.includes('mocacinno') || flv.includes('moka') || flv.includes('vanilla') || flv.includes('latte') || flv.includes('coolin') || flv.includes('nut'));
                 const isPopIceFlavor = (flv.includes('taro') || flv.includes('avocado') || flv.includes('permen') || flv.includes('bubble') || flv.includes('chocolate') || flv.includes('strawberry') || flv.includes('blue'));
 
-                if (isBuah) {
-                    this.selectedMenu.name = 'Nutrisari';
-                } else if (isKopi) {
-                    this.selectedMenu.name = 'Good Day';
-                } else if (isPopIceFlavor) {
-                    this.selectedMenu.name = 'Pop Ice';
-                    this.drinkTemp = 'Ice'; // Mengunci mutlak pesanan Pop ice di array belanjaan ke 'Ice'
-                }
+                if (isBuah) { menuName = 'Nutrisari'; } 
+                else if (isKopi) { menuName = 'Good Day'; } 
+                else if (isPopIceFlavor) { menuName = 'Pop Ice'; this.drinkTemp = 'Ice'; }
             }
             
             const cartItem = {
                 id: 'custom-' + Date.now(),
+                // FIXED: Mempertahankan ID asli menu dari database agar tidak memicu Integrity Constraint Error!
                 menu_id: this.selectedMenu.id, 
-                name: this.selectedMenu.name,
+                name: menuName,
                 price: this.totalCalculatedPrice,
-                quantity: 1,
+                quantity: 1, 
+                qty: 1,      
                 options: {
                     soup: isSeblak ? this.soup : null,
                     spicy: isSeblak ? this.spicy : null,
                     flavor: !isSeblak ? this.selectedFlavor : null,
-                    temp: !isSeblak ? this.drinkTemp : null, // Masukkan data Ice/Hot
+                    temp: !isSeblak ? this.drinkTemp : null, 
                     toppings: isSeblak ? [...this.selectedToppings] : [],
                     notes: this.notes
                 }
@@ -421,6 +401,7 @@ function menuSystem() {
                 body: JSON.stringify({ cart: this.cart })
             })
             .then(response => response.json())
+            .then(data => { console.log('Session Keranjang Ter-sinkron:', data); })
             .catch(err => console.error('Gagal sinkronisasi session:', err));
         },
         

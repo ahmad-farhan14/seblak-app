@@ -6,133 +6,159 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Menu;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class CartController extends Controller
 {
-    public function index()
-    {
-        return view('customer.cart');
-    }
-
-    public function saveCart(Request $request)
-    {
-        session(['cart' => $request->cart]);
-        return response()->json(['status' => 'success', 'message' => 'Keranjang berhasil disimpan di session']);
-    }
-
+    /**
+     * 1. MENAMPILKAN HALAMAN CHECKOUT PEMBELI
+     */
     public function checkout()
     {
-        $cart = session('cart', []);
+        $cart = Session::get('cart', []);
+
+        if (empty($cart)) {
+            return redirect()->route('front.menu')->with('error', 'Keranjang belanja kamu masih kosong!');
+        }
+
         return view('customer.checkout', compact('cart'));
     }
 
-    public function processOrder(Request $request)
+    /**
+     * 2. SYNC REKAP KERANJANG DARI JAVASCRIPT KE SESSION LARAVEL
+     */
+    public function saveCart(Request $request)
     {
-        $request->withHtmlSecure = true; // Flag proteksi teks
+        $cart = $request->input('cart', []);
+        Session::put('cart', $cart);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Keranjang belanja berhasil disinkronkan ke server!',
+            'count' => count($cart)
+        ]);
+    }
+
+    /**
+     * 3. PROSES CHECKOUT INDUK & TRANSAKSI (TUNAI ATAU MIDTRANS QRIS)
+     */
+    public function processCheckout(Request $request)
+    {
         $request->validate([
-            'customer_name'  => 'required|string|max:255',
-            'payment_method' => 'required|string|in:tunai,qris'
+            'customer_name' => 'required|string|max:255',
+            'payment_method' => 'required|in:tunai,qris',
         ]);
 
-        $cart = session('cart', []);
-        if (empty($cart)) {
-            return redirect()->route('landing')->with('error', 'Keranjang belanja kamu kosong!');
-        }
+        $cart = Session::get('cart', []);
 
-        $orderType = session('order_type', 'dine_in');
-        $tableNumber = session('table_number', null);
-        
-        // Gabungkan Informasi Nama Pelanggan, Metode Pembayaran, dan Catatan Tambahan ke kolom notes
-        $paymentLabel = $request->payment_method === 'qris' ? 'QRIS (Non-Tunai)' : 'Tunai (Cash)';
-        $customerNotes = "Nama Pelanggan: " . $request->customer_name . " | Pembayaran: " . $paymentLabel;
-        
-        if ($request->notes) {
-            $customerNotes .= " | Catatan Tambahan: " . $request->notes;
+        if (empty($cart)) {
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Keranjang belanja kamu kosong.'], 400);
+            }
+            return redirect()->back()->with('error', 'Keranjang belanja kosong.');
         }
 
         $totalPrice = collect($cart)->reduce(function ($sum, $item) {
-            return $sum + ($item['price'] * $item['quantity']);
+            return $sum + ($item['price'] * ($item['quantity'] ?? 1));
         }, 0);
 
-        $orderNumber = 'INV-' . strtoupper(uniqid());
+        $orderNumber = 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+
+        $tableNumber = Session::get('table_number', 'Dine In');
+        $orderType = Session::get('order_type') === 'take_away' ? 'Take Away' : 'Dine In';
+        $globalNotes = $request->customer_name . " | Tipe: " . $orderType;
+        if ($request->notes) {
+            $globalNotes .= " | Catatan Kasir: " . $request->notes;
+        }
+
+        DB::beginTransaction();
 
         try {
-            DB::beginTransaction();
+            $order = new Order();
+            $order->order_number = $orderNumber;
+            $order->table_number = Session::get('order_type') === 'take_away' ? 'Take Away' : $tableNumber;
+            $order->total_price = $totalPrice;
+            $order->status = 'Pending'; 
+            $order->notes = $globalNotes;
+            $order->save();
 
-            // 1. Simpan data induk ke tabel orders
-            $order = Order::create([
-                'order_number' => $orderNumber,
-                'order_type'   => $orderType,
-                'table_number' => $orderType === 'take_away' ? 'Take Away' : ($tableNumber ?? 'Dine In'),
-                'total_price'  => $totalPrice,
-                'status'       => 'pending',
-                'notes'        => $customerNotes
-            ]);
-
-            // 2. Simpan item ke tabel order_items
-            foreach ($cart as $item) {
-                $options = $item['options'] ?? [];
-                $menuId = (int)$item['menu_id'];
-
-                if (isset($options['flavor']) && !empty($options['flavor'])) {
-                    $flv = strtolower($options['flavor']);
-                    
-                    $isBuah = (str_contains($flv, 'peras') || str_contains($flv, 'orange') || str_contains($flv, 'mango') || str_contains($flv, 'mangga') || str_contains($flv, 'nipis'));
-                    $isKopi = (str_contains($flv, 'cappuccino') || str_contains($flv, 'mocacinno') || str_contains($flv, 'moka') || str_contains($flv, 'vanilla') || str_contains($flv, 'latte') || str_contains($flv, 'coolin') || str_contains($flv, 'nut'));
-                    $isPopIceFlavor = (str_contains($flv, 'taro') || str_contains($flv, 'avocado') || str_contains($flv, 'permen') || str_contains($flv, 'bubble') || str_contains($flv, 'chocolate') || str_contains($flv, 'strawberry') || str_contains($flv, 'blue'));
-
-                    if ($isBuah) {
-                        $matchedMenu = Menu::where('name', 'like', '%Nutrisari%')->first();
-                    } elseif ($isKopi) {
-                        $matchedMenu = Menu::where('name', 'like', '%Good Day%')->first();
-                    } elseif ($isPopIceFlavor) {
-                        $matchedMenu = Menu::where('name', 'like', '%Pop Ice%')->first();
-                        $options['temp'] = 'Ice';
-                    } else {
-                        $matchedMenu = null;
-                    }
-
-                    if ($matchedMenu) {
-                        $menuId = $matchedMenu->id;
-                    }
+            foreach ($cart as $id => $item) {
+                $orderItem = new OrderItem();
+                $orderItem->order_id = $order->id;
+                
+                // SAFE-GUARD: Mengambil ID menu dan memvalidasi ke database agar tidak crash jika ada data janggal
+                $menuId = $item['menu_id'] ?? null;
+                if (!$menuId || !\App\Models\Menu::where('id', $menuId)->exists()) {
+                    // Jika menu_id kosong/rusak, coba fallback cari menu berdasarkan kecocokan string nama
+                    $fallbackMenu = \App\Models\Menu::where('name', 'like', '%' . ($item['name'] ?? '') . '%')->first();
+                    $menuId = $fallbackMenu ? $fallbackMenu->id : \App\Models\Menu::first()->id;
                 }
+                
+                $orderItem->menu_id = $menuId;
+                $orderItem->qty = $item['quantity'] ?? 1;
+                $orderItem->price = $item['price'];
+                $orderItem->notes = isset($item['options']) ? json_encode($item['options']) : null;
+                $orderItem->save();
+            }
 
-                if ($menuId === 999 || $menuId === 888) {
-                    $fallbackMenu = Menu::where('name', 'not like', '%Seblak%')->first();
-                    $menuId = $fallbackMenu ? $fallbackMenu->id : 1; 
-                }
+            if ($request->payment_method === 'qris') {
+                \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                \Midtrans\Config::$isSanitized = config('midtrans.is_sanitized');
+                \Midtrans\Config::$is3ds = config('midtrans.is_3ds');
 
-                OrderItem::create([
-                    'order_id'    => $order->id,
-                    'menu_id'     => $menuId, 
-                    'qty'         => $item['quantity'] ?? 1,
-                    'price'       => $item['price'],
-                    'soup'        => $options['soup'] ?? null,
-                    'spicy_level' => isset($options['spicy']) ? (int)$options['spicy'] : 0,
-                    'notes'       => json_encode($options) 
+                $params = [
+                    'transaction_details' => [
+                        'order_id' => $orderNumber,
+                        'gross_amount' => (int) $totalPrice,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $request->customer_name,
+                    ],
+                    'enabled_payments' => ['gopay', 'qris', 'shopeepay'],
+                ];
+
+                $snapToken = \Midtrans\Snap::getSnapToken($params);
+
+                Session::forget('cart'); 
+                DB::commit();
+
+                return response()->json([
+                    'snap_token' => $snapToken,
+                    'order_id' => $order->id,
+                    'order_number' => $orderNumber
                 ]);
             }
 
+            Session::forget('cart'); 
             DB::commit();
 
-            session()->forget('cart');
+            if ($request->ajax()) {
+                return response()->json([
+                    'redirect_url' => route('order.success', $order->id),
+                    'message' => 'Pesanan tunai berhasil disimpan!'
+                ]);
+            }
 
-            return redirect()->route('order.success', $order->id)
-                             ->with('success_message', 'Pesanan berhasil dibuat! Silakan tunggu di antrean kasir.');
+            return redirect()->route('order.success', $order->id);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            return redirect()->back()
-                             ->withInput()
-                             ->with('error', '⚠️ Gagal Memproses Pesanan: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Gagal memproses pesanan: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
     }
 
+    /**
+     * 4. HALAMAN NOTIFIKASI SUKSES STRUK NOTA
+     */
     public function success($id)
     {
-        $order = Order::with('items.menu')->findOrFail($id);
-        return view('customer.success', compact('order'));
+        $order = Order::findOrFail($id);
+        return view('customer.order-success', compact('order'));
     }
 }
