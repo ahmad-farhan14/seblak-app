@@ -24,6 +24,7 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
     /etc/apache2/sites-available/000-default.conf
 
-RUN a2dismod mpm_event mpm_worker && a2enmod mpm_prefork rewrite
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf
+RUN a2enmod mpm_prefork rewrite
 
 EXPOSE 80
