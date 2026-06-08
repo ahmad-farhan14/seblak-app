@@ -1,8 +1,8 @@
 FROM webdevops/php-nginx:8.3
 
-# 1. Install Node.js & NPM untuk compile asset (Vite/Tailwind)
+# 1. FORCE INSTALL NODE.JS V20 (UNTUK TAILWIND V4)
 RUN apt-get update && apt-get install -y curl \
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
 # 2. Set working directory ke standar path webdevops
@@ -14,7 +14,7 @@ COPY . .
 # 4. Install PHP Dependencies via Composer
 RUN composer install --no-dev --optimize-autoloader
 
-# 5. Compile Frontend Assets (Agar tampilan CSS Tailwind-mu rapi dan muncul)
+# 5. Compile Frontend Assets (Sekarang dijamin sukses karena Node sudah v20)
 RUN npm install && npm run build
 
 # 6. Set Environment Variables internal untuk mengarahkan Nginx ke folder public Laravel
