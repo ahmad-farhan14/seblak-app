@@ -7,7 +7,9 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     git \
-    nginx
+    nginx \
+    nodejs \
+    npm
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
@@ -19,6 +21,8 @@ WORKDIR /var/www/html
 COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
+
+RUN npm install && npm run build
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
