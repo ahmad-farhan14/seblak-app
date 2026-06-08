@@ -138,7 +138,12 @@
                             </div>
                             <input type="range" min="0" max="5" x-model="spicy" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 focus:outline-none">
                             <div class="flex justify-between text-[10px] text-gray-400 px-1 mt-1 font-medium">
-                                <span>0 (Ori)</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5 (Mampus)</span>
+                                <span>0</span>
+                                <span>1</span>
+                                <span>2</span>
+                                <span>3</span>
+                                <span>4</span>
+                                <span>5</span>
                             </div>
                         </div>
 
@@ -146,28 +151,37 @@
                             <div class="p-4 border-b border-gray-50 bg-white flex justify-between items-center">
                                 <div>
                                     <span class="block font-bold text-gray-800 text-xs sm:text-sm">Pilihan Toppings Tambahan</span>
-                                    <span class="text-[11px] text-gray-400 font-light mt-0.5 block">Wajib memilih minimal 3 topping</span>
+                                    <span class="text-[11px] text-gray-400 font-light mt-0.5 block">Wajib memilih minimal 3 unit topping</span>
                                 </div>
                                 <span class="text-xs font-bold px-2.5 py-1 rounded-md transition-colors" 
-                                      :class="selectedToppings.length < 3 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200'"
-                                      x-text="selectedToppings.length < 3 ? 'Pilih minimal 3 (' + selectedToppings.length + ' terpilih)' : selectedToppings.length + ' Terpilih (Aman)'">
+                                      :class="getTotalToppingUnits() < 3 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200'"
+                                      x-text="getTotalToppingUnits() < 3 ? 'Pilih minimal 3 (' + getTotalToppingUnits() + ' unit)' : getTotalToppingUnits() + ' Unit Terpilih (Aman)'">
                                 </span>
                             </div>
-                            
+
                             <div class="divide-y divide-gray-50 max-h-55 overflow-y-auto">
-                                <template x-for="top in toppingList" :key="top.id">
-                                    <label class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-gray-50/50 transition select-none">
-                                        <div class="flex items-center space-x-3 min-w-0">
-                                            <div class="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 border border-orange-100 shrink-0">
-                                                <img :src="top.image" :alt="top.name" class="w-full h-full object-cover">
+                                <template x-for="group in groupedToppings()" :key="group.name">
+                                    <div class="pt-3">
+                                        <div class="px-4 pb-3 text-xs font-black uppercase tracking-wide text-gray-500 bg-gray-50">{{-- category header --}}<span x-text="group.name"></span></div>
+                                        <template x-for="top in group.toppings" :key="top.id">
+                                            <div class="flex items-center justify-between p-3.5 hover:bg-gray-50/50 transition select-none">
+                                                <div class="flex items-center space-x-3 min-w-0">
+                                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 border border-orange-100 shrink-0">
+                                                        <img :src="top.image" :alt="top.name" class="w-full h-full object-cover">
+                                                    </div>
+                                                    <span class="text-xs sm:text-sm font-semibold text-gray-700 truncate" x-text="top.name"></span>
+                                                </div>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <div class="flex items-center border border-gray-200 rounded-full overflow-hidden bg-white">
+                                                        <button type="button" @click.stop="changeToppingQty(top, -1)" class="w-8 h-8 text-gray-600 hover:bg-gray-100">-</button>
+                                                        <div class="w-10 text-center text-sm font-semibold text-gray-800" x-text="getToppingQty(top)"></div>
+                                                        <button type="button" @click.stop="changeToppingQty(top, 1)" class="w-8 h-8 text-gray-600 hover:bg-gray-100">+</button>
+                                                    </div>
+                                                    <span class="text-xs text-gray-400 font-bold" x-text="formatPrice(top.price * getToppingQty(top))"></span>
+                                                </div>
                                             </div>
-                                            <span class="text-xs sm:text-sm font-semibold text-gray-700 truncate" x-text="top.name"></span>
-                                        </div>
-                                        <div class="flex items-center space-x-3 shrink-0">
-                                            <span class="text-xs text-gray-400 font-bold" x-text="formatPrice(top.price)"></span>
-                                            <input type="checkbox" :checked="selectedToppings.some(t => t.id === top.id)" @change="toggleTopping(top)" class="w-4 h-4 text-red-600 rounded border-gray-300 accent-red-600">
-                                        </div>
-                                    </label>
+                                        </template>
+                                    </div>
                                 </template>
                             </div>
                         </div>
@@ -256,18 +270,26 @@ function menuSystem() {
         cart: [], 
         
         toppingList: [
-            { id: 1, name: 'Kerupuk jaat secentong', price: 1000, image: "{{ asset('images/kerupukjaat.jpg') }}" },
-            { id: 2, name: 'Kerupuk mawar secentong', price: 1000, image: "{{ asset('images/kerupukmawar.jpg') }}" },
-            { id: 3, name: 'Makaroni spiral secentong', price: 1000, image: "{{ asset('images/makaronispiral.jpg') }}" },
-            { id: 4, name: 'Kwetiau secentong', price: 2000, image: "{{ asset('images/kwetiau.jpg') }}" },
-            { id: 5, name: 'Kerupuk jengkol secentong', price: 1000, image: "{{ asset('images/kpjengkol.jpg') }}" },
-            { id: 6, name: 'Makaroni hitam secentong', price: 1000, image: "{{ asset('images/makaronihitam.jpg') }}" },
-            { id: 7, name: 'Makaroni kuning secentong', price: 1000, image: "{{ asset('images/makaronikuning.jpg') }}" },
-            { id: 8, name: 'Mie kering', price: 2000, image: "{{ asset('images/miekering.jpeg') }}" },
-            { id: 9, name: 'Kerupuk bawang secentong', price: 1000, image: "{{ asset('images/kpbawang.jpg') }}" },
-            { id: 10, name: 'Kerupuk mie secentong', price: 1000, image: "{{ asset('images/kpmie.jpg') }}" },
-            { id: 11, name: 'Kerupuk oren secentong', price: 1000, image: "{{ asset('images/kporen.jpg') }}" },
-            { id: 12, name: 'Telur ayam 1pcs', price: 3000, image: "{{ asset('images/telur.jpeg') }}" }
+            { id: 1, name: 'Kerupuk jaat secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kerupukjaat.jpg') }}" },
+            { id: 2, name: 'Kerupuk mawar secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kerupukmawar.jpg') }}" },
+            { id: 3, name: 'Makaroni spiral secentong', price: 1000, category: 'Makaroni & Mie', image: "{{ asset('images/makaronispiral.jpg') }}" },
+            { id: 4, name: 'Kwetiau secentong', price: 2000, category: 'Makaroni & Mie', image: "{{ asset('images/kwetiau.jpg') }}" },
+            { id: 5, name: 'Kerupuk jengkol secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kpjengkol.jpg') }}" },
+            { id: 6, name: 'Makaroni hitam secentong', price: 1000, category: 'Makaroni & Mie', image: "{{ asset('images/makaronihitam.jpg') }}" },
+            { id: 7, name: 'Makaroni kuning secentong', price: 1000, category: 'Makaroni & Mie', image: "{{ asset('images/makaronikuning.jpg') }}" },
+            { id: 8, name: 'Mie kering', price: 2000, category: 'Makaroni & Mie', image: "{{ asset('images/miekering.jpeg') }}" },
+            { id: 9, name: 'Kerupuk bawang secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kpbawang.jpg') }}" },
+            { id: 10, name: 'Kerupuk mie secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kpmie.jpg') }}" },
+            { id: 11, name: 'Kerupuk oren secentong', price: 1000, category: 'Kerupuk', image: "{{ asset('images/kporen.jpg') }}" },
+            { id: 12, name: 'Telur ayam 1pcs', price: 3000, category: 'Protein', image: "{{ asset('images/telur.jpeg') }}" },
+            { id: 13, name: 'Baso 1 pcs', price: 2000, category: 'Protein', image: "{{ asset('images/baso.jpg') }}" },
+            { id: 14, name: 'Cilok 1 pcs', price: 2000, category: 'Protein', image: "{{ asset('images/cilok.jpg') }}" },
+            { id: 15, name: 'Sawi putih 1 lembar', price: 1500, category: 'Sayuran', image: "{{ asset('images/sawiputih.jpg') }}" },
+            { id: 16, name: 'Kangkung 1 ikat', price: 2500, category: 'Sayuran', image: "{{ asset('images/kangkung.jpg') }}" },
+            { id: 17, name: 'Jamur enoki setengah bungkus', price: 3000, category: 'Sayuran', image: "{{ asset('images/jamurenoki.jpg') }}" },
+            { id: 18, name: 'Batagor kering 1 pcs', price: 2500, category: 'Protein', image: "{{ asset('images/batagorkering.jpeg') }}" },
+            { id: 19, name: 'Cuanki lidah 1 pcs', price: 3000, category: 'Protein', image: "{{ asset('images/cuankilidah.jpg') }}" },
+            { id: 20, name: 'Sosis 1 pcs', price: 2000, category: 'Protein', image: "{{ asset('images/sosis.jpg') }}" }
         ],
 
         popIceFlavors: ['Chocolate', 'Strawberry', 'Taro', 'Vanilla Blue', 'Mango', 'Avocado'],
@@ -300,22 +322,55 @@ function menuSystem() {
             this.modalOpen = true;
         },
         
-        toggleTopping(topping) {
+        getToppingQty(topping) {
+            const item = this.selectedToppings.find(t => t.id === topping.id);
+            return item ? item.qty : 0;
+        },
+
+        groupedToppings() {
+            const groups = {};
+            this.toppingList.forEach(top => {
+                const category = top.category || 'Lainnya';
+                if (!groups[category]) {
+                    groups[category] = [];
+                }
+                groups[category].push(top);
+            });
+            return Object.keys(groups).map(name => ({ name, toppings: groups[name] }));
+        },
+
+        getTotalToppingUnits() {
+            return this.selectedToppings.reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        changeToppingQty(topping, delta) {
             const index = this.selectedToppings.findIndex(t => t.id === topping.id);
-            if (index > -1) {
-                this.selectedToppings.splice(index, 1);
-                this.totalCalculatedPrice -= topping.price;
-            } else {
-                this.selectedToppings.push(topping);
-                this.totalCalculatedPrice += topping.price;
+            const currentQty = index > -1 ? this.selectedToppings[index].qty : 0;
+            const nextQty = currentQty + delta;
+
+            if (nextQty <= 0) {
+                if (index > -1) {
+                    this.selectedToppings.splice(index, 1);
+                }
+                if (currentQty > 0) {
+                    this.totalCalculatedPrice -= topping.price * currentQty;
+                }
+                return;
             }
+
+            if (index > -1) {
+                this.selectedToppings[index].qty = nextQty;
+            } else {
+                this.selectedToppings.push({ ...topping, qty: 1 });
+            }
+            this.totalCalculatedPrice += topping.price * delta;
         },
         
         addCustomToCart() {
             const isSeblak = this.strtoupper(this.selectedMenu.name).includes('SEBLAK');
             
-            if (isSeblak && this.selectedToppings.length < 3) {
-                alert('Wajib memilih minimal 3 topping untuk melanjutkan menu Seblak!');
+            if (isSeblak && this.getTotalToppingUnits() < 3) {
+                alert('Wajib memilih minimal 3 unit topping untuk melanjutkan menu Seblak!');
                 return;
             }
 
