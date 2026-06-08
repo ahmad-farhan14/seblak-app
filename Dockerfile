@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.3-fpm
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \
@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     zip \
     unzip \
-    git
+    git \
+    nginx
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
@@ -21,15 +22,8 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
-    /etc/apache2/sites-available/000-default.conf
-
-RUN find /etc/apache2/mods-enabled/ -name "mpm_*" -delete \
-    && cp /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
-    && cp /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
-
-RUN a2enmod rewrite
+COPY nginx.conf /etc/nginx/sites-available/default
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+CMD service nginx start && php-fpm
