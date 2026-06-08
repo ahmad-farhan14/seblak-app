@@ -1,66 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Markdown
+# 🍜 Seblak App - Sistem Pemesanan Mandiri & Kasir
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem informasi pemesanan menu makanan (Seblak) dan minuman berbasis web menggunakan framework **Laravel 10** dan **Alpine.js**, serta telah terintegrasi dengan payment gateway **Midtrans QRIS** untuk proses pembayaran otomatis.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 👨‍🏫 Cara Cepat untuk Dosen Penguji (Quick Run)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Jika Bapak/Ibu Dosen Penguji ingin memeriksa dan menjalankan aplikasi ini secara instan di komputer yang sudah terinstal Laragon/XAMPP & Composer, silakan ikuti 3 langkah mudah berikut:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Download / Clone** repository ini dan letakkan folder `seblak-app` di dalam direktori server local Anda (misal: `C:\laragon\www\` atau `C:\xampp\htdocs\`).
+2. Buat database baru yang masih kosong bernama **`seblak_db`** melalui phpMyAdmin atau HeidiSQL.
+3. Jalankan file otomatisasi instalasi dengan melakukan *double-click* pada file **`install-demo.bat`** yang telah disediakan di dalam folder proyek ini.
 
-## Learning Laravel
+*Script tersebut akan otomatis menginstal vendor library yang dibutuhkan, membuat file konfigurasi `.env` default, melakukan generate key keamanan, serta mengisi data menu awal (seeding) ke database secara otomatis. Aplikasi siap diakses di browser melalui URL `http://localhost/seblak-app/public` atau `http://seblak-app.test`.*
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🚀 Panduan Instalasi Manual (Langkah demi Langkah)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Jika Anda ingin melakukan proses instalasi dan konfigurasi sistem secara manual, silakan ikuti langkah-langkah di bawah ini:
 
-## Laravel Sponsors
+### 1. Masuk ke Folder Proyek
+Buka terminal (Cmder / Git Bash) di dalam direktori proyek, lalu jalankan:
+```bash
+cd seblak-app
+2. Jalankan Composer Install
+Karena folder vendor di-ignore oleh Git, Anda wajib mengunduh kembali seluruh dependencies library PHP (termasuk SDK Midtrans) dengan perintah:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Bash
+composer install
+3. Konfigurasi Environment (.env)
+Salin file .env.example yang sudah ada menjadi file .env:
 
-### Premium Partners
+Bash
+cp .env.example .env
+Buka file .env tersebut menggunakan teks editor, kemudian sesuaikan nama database serta masukkan Midtrans Server Key Sandbox Anda:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Cuplikan kode
+DB_DATABASE=seblak_db
 
-## Contributing
+MIDTRANS_SERVER_KEY=Mid-server-YOUR_SANDBOX_SERVER_KEY
+MIDTRANS_CLIENT_KEY=Mid-client-YOUR_SANDBOX_CLIENT_KEY
+MIDTRANS_IS_PRODUCTION=false
+4. Generate Application Key & Jalankan Migrasi Database
+Buat key baru untuk enkripsi Laravel dan jalankan migration beserta seeder bawaan untuk mengisi data menu awal ke database:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Bash
+php artisan key:generate
+php artisan migrate --seed
+5. Bersihkan Cache Aplikasi
+Pastikan seluruh konfigurasi lama dibersihkan agar Laravel membaca konfigurasi yang baru diperbarui:
 
-## Code of Conduct
+Bash
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+🛠️ Fitur Utama Aplikasi
+Pemesanan Mandiri Pelanggan (Customer Front-End):
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Pemilihan tipe order: Dine-In (Makan di sini dengan nomor meja) atau Take Away (Bawa pulang).
 
-## Security Vulnerabilities
+Kustomisasi menu seblak: Pilihan jenis kuah (pedas gurih/pedas manis), tingkat kepedasan (level 0-5), dan validasi wajib memilih minimal 3 unit topping tambahan.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Kustomisasi menu minuman: Deteksi varian rasa secara dinamis berdasarkan jenis produk (Pop Ice, Nutrisari, Good Day) serta pilihan suhu (Ice/Hot).
 
-## License
+Integrasi Gerbang Pembayaran (Payment Gateway):
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Pembayaran otomatis menggunakan Midtrans Snap API (QRIS, Gopay, ShopeePay) pada mode pembayaran non-tunai.
+
+Penanganan status transaksi aman yang langsung terhubung ke database.
+
+Struk Nota Digital:
+
+Halaman sukses yang didesain menyerupai tampilan nota kasir fisik, menampilkan informasi personal berupa Nama Pelanggan, Nomor Meja, Rincian Menu beserta kustomisasinya, dan Total Tagihan akhir.
+
+Manajemen Dapur & Kasir (Back-End Admin):
+
+Pembaruan status antrean pengerjaan makanan secara berkala dari panel admin.
