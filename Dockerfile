@@ -22,15 +22,17 @@ WORKDIR /var/www/html
 # Copy source code
 COPY . .
 
-# Install dependencies (INI YANG MENGATASI ERROR AUTOLOAD)
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
+
+# FIX UNTUK ERROR MPM: Matikan MPM event agar tidak tabrakan
+RUN a2dismod mpm_event && a2enmod mpm_prefork
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Konfigurasi Apache ke public folder
+# Ubah document root apache ke folder public
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# Expose port
 EXPOSE 80
