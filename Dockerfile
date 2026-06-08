@@ -1,27 +1,36 @@
-# Gunakan PHP 8.3 dengan Apache
 FROM php:8.3-apache
 
-# Install ekstensi yang dibutuhkan Laravel
+# Install sistem dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    git
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# Aktifkan mod rewrite untuk routing Laravel
-RUN a2enmod rewrite
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy semua file ke dalam container
+# Copy source code
 COPY . .
 
-# Set permission agar folder storage bisa diakses Laravel
+# Install dependencies (INI YANG MENGATASI ERROR AUTOLOAD)
+RUN composer install --no-dev --optimize-autoloader
+
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Ubah document root apache ke folder public
+# Konfigurasi Apache ke public folder
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite
+
+# Expose port
+EXPOSE 80
