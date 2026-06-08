@@ -1,6 +1,5 @@
 FROM php:8.3-apache
 
-# Install sistem dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -9,34 +8,22 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git
 
-# Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy source code
 COPY . .
 
-# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# FIX UNTUK ERROR MPM: Matikan semua modul MPM sebelum memilih satu
-RUN a2dismod mpm_event mpm_worker mpm_prefork || true
-RUN a2enmod mpm_prefork
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' \
+    /etc/apache2/sites-available/000-default.conf
 
-# Ubah document root apache ke folder public
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
-
-# Pastikan Apache mendengarkan port 80
-RUN echo "Listen 80" >> /etc/apache2/ports.conf
 
 EXPOSE 80
