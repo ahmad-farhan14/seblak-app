@@ -32,7 +32,6 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="antrean-container">
             @forelse ($orders as $order)
                 @php
-                    // Ambil status dan ubah jadi lowercase untuk keamanan pengecekan logika warna badge
                     $currentStatus = strtolower($order['status'] ?? 'pending');
                     $isStatusDiproses = in_array($currentStatus, ['diproses', 'processing', 'process']);
                     $isStatusPending = in_array($currentStatus, ['pending', 'menunggu']);
@@ -58,7 +57,6 @@
                                 {{ $order['customer_name'] }}
                             </h3>
                             
-                            {{-- LOGIKA DETEKSI METODE PEMBAYARAN DARI NOTES INDUK --}}
                             @php
                                 $orderNotes = strtolower($order['notes'] ?? '');
                                 $isQris = str_contains($orderNotes, 'qris');
@@ -89,62 +87,112 @@
 
                     {{-- DAFTAR ITEM MAKANAN / MINUMAN --}}
                     <div class="divide-y divide-gray-50 flex-1">
-                        @foreach($order['items'] as $item)
-                            @php
+                        @php
+                            $normalizedItems = collect($order['items'])->map(function($item) {
                                 $itemNotes = is_string($item['notes']) ? json_decode($item['notes'], true) : ($item['notes'] ?? []);
-                                $flavorInput = isset($itemNotes['flavor']) ? strtolower($itemNotes['flavor']) : '';
-                                $tempInput = isset($itemNotes['temp']) ? $itemNotes['temp'] : ''; 
+                                $tempInput = $itemNotes['temp'] ?? '';
 
-                                $allToppingsText = isset($item['custom']['toppings']) ? strtolower(implode(' ', $item['custom']['toppings'])) : '';
-                                $currentName = $item['name'] ?? 'Menu';
+                                $item['computed_name'] = $item['name'];
+                                $item['computed_temp'] = $tempInput;
+                                return $item;
+                            });
+                        @endphp
 
-                                if (!empty($flavorInput) || !empty($allToppingsText)) {
-                                    $fullFlavorText = $flavorInput . ' ' . $allToppingsText;
-
-                                    $isNutrisari = (str_contains($fullFlavorText, 'peras') || str_contains($fullFlavorText, 'orange') || str_contains($fullFlavorText, 'mango') || str_contains($fullFlavorText, 'mangga') || str_contains($fullFlavorText, 'nipis'));
-                                    $isGoodDay   = (str_contains($fullFlavorText, 'cappuccino') || str_contains($fullFlavorText, 'mocacinno') || str_contains($fullFlavorText, 'moka') || str_contains($fullFlavorText, 'latte') || str_contains($fullFlavorText, 'coolin') || str_contains($fullFlavorText, 'carrebian'));
-                                    $isPopIce    = (str_contains($fullFlavorText, 'taro') || str_contains($fullFlavorText, 'avocado') || str_contains($fullFlavorText, 'permen') || str_contains($fullFlavorText, 'bubble') || str_contains($fullFlavorText, 'chocolate') || str_contains($fullFlavorText, 'coklat') || str_contains($fullFlavorText, 'strawberry') || str_contains($fullFlavorText, 'blue'));
-
-                                    if ($isNutrisari) {
-                                        $currentName = 'Nutrisari';
-                                    } elseif ($isGoodDay) {
-                                        $currentName = 'Good Day';
-                                    } elseif ($isPopIce) {
-                                        $currentName = 'Pop Ice';
-                                        $tempInput = 'Ice';
-                                    }
-                                }
-
-                                $finalToppings = $item['custom']['toppings'] ?? [];
-                                if (!empty($tempInput)) {
-                                    array_unshift($finalToppings, "Suhu: " . $tempInput); 
-                                }
-
-                                $perMenuNote = $itemNotes['notes'] ?? '';
+                        @foreach($normalizedItems->groupBy('computed_name') as $menuName => $groupedItems)
+                            @php
+                                $totalQty = $groupedItems->sum('qty');
+                                $totalPrice = $groupedItems->sum(function($i) { return $i['price'] * $i['qty']; });
                             @endphp
 
-                            {{-- Render Baris Menu Pesanan --}}
-                            <div class="py-3 flex justify-between items-start gap-4">
-                                <div class="min-w-0 flex-1">
-                                    <h4 class="font-bold text-sm text-gray-800 truncate">
-                                        {{ $currentName }} <span class="text-red-600 font-black ml-0.5">x{{ $item['qty'] }}</span>
-                                    </h4>
-                                    
-                                    @if(!empty($finalToppings))
-                                        <p class="text-[11px] text-gray-400 font-medium mt-0.5 leading-tight">
-                                            Opsi: {{ is_array($finalToppings) ? implode(', ', $finalToppings) : $finalToppings }}
-                                        </p>
-                                    @endif
+                            <div class="py-3">
+                                <div class="flex justify-between items-start gap-4">
+                                    <div class="min-w-0 flex-1">
+                                        <h4 class="font-bold text-sm text-gray-800">
+                                            {{ $menuName }} <span class="bg-amber-100 text-amber-800 text-xs font-black ml-1 px-1.5 py-0.5 rounded-md">x{{ $totalQty }}</span>
+                                        </h4>
+                                        
+                                        {{-- GRID CONTAINER UNTUK BADGE KOTAK TOPPING & RASA --}}
+                                        <div class="flex flex-wrap gap-1 mt-1.5">
+                                            @foreach($groupedItems as $subItem)
+                                                @php
+                                                    $subBasics = $subItem['custom']['basics'] ?? [];
+                                                    $subToppings = $subItem['custom']['toppings'] ?? [];
+                                                    $itemNotes = is_string($subItem['notes']) ? json_decode($subItem['notes'], true) : ($subItem['notes'] ?? []);
+                                                    $perMenuNote = $itemNotes['notes'] ?? '';
+                                                    
+                                                    if (!empty($subItem['computed_temp'])) {
+                                                        array_unshift($subBasics, "Suhu: " . $subItem['computed_temp']);
+                                                    }
 
-                                    @if(!empty($perMenuNote))
-                                        <p class="text-[11px] text-orange-600 bg-orange-50 inline-block px-2 py-0.5 rounded-md font-bold mt-1">
-                                            📝 Catatan: "{{ $perMenuNote }}"
-                                        </p>
-                                    @endif
+                                                    // Normalisasi array untuk topping tambahan saja
+                                                    $finalToppingsArray = [];
+                                                    foreach($subToppings as $topping) {
+                                                        if (is_string($topping) && str_contains($topping, ',')) {
+                                                            $parts = explode(',', $topping);
+                                                            foreach($parts as $part) { $finalToppingsArray[] = trim($part); }
+                                                        } else {
+                                                            $finalToppingsArray[] = trim($topping);
+                                                        }
+                                                    }
+                                                    $cleanToppingsArray = array_filter($finalToppingsArray);
+                                                    $countedToppings = array_count_values($cleanToppingsArray);
+                                                @endphp
+
+                                                {{-- TAHAP A: CETAK KARAKTERISTIK UTAMA (KUAH / LEVEL / SUHU) --}}
+                                                @foreach(array_unique($subBasics) as $basicName)
+                                                    @php
+                                                        $isLevel = str_contains(strtolower($basicName), 'level');
+                                                        $isKuah  = str_contains(strtolower($basicName), 'kuah:');
+                                                    @endphp
+                                                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded border 
+                                                        {{ $isLevel ? 'bg-red-50 text-red-700 border-red-200' : ($isKuah ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200') }}">
+                                                        @if($isLevel) 🌶️ @elseif($isKuah) 🥣 @else 📌 @endif 
+                                                        {{ $basicName }}
+                                                    </span>
+                                                @endforeach
+
+                                                {{-- TAHAP B: CETAK TOPPING TAMBAHAN (SANGAT AGRESIF MERAPIKAN FORMAT 4x / 11x) --}}
+                                                @foreach($countedToppings as $toppingName => $quantity)
+                                                    @php 
+                                                        $cleanName = trim($toppingName);
+                                                        $displayQty = $quantity;
+                                                        $displayName = $cleanName;
+                                                        
+                                                        // 1. Cek pola jika diawali angka dan huruf x (misal: "4xKerupuk", "4 x Kerupuk", "11x Kerupuk")
+                                                        if (preg_match('/^(\d+)\s*x\s*(.*)$/i', $cleanName, $matches)) {
+                                                            $displayQty = intval($matches[1]) * $quantity;
+                                                            $displayName = trim($matches[2]);
+                                                        } 
+                                                        // 2. Cek pola jika diawali angka murni saja terpisah spasi (misal: "4 Kerupuk")
+                                                        elseif (preg_match('/^(\d+)\s+(.*)$/', $cleanName, $matches)) {
+                                                            $displayQty = intval($matches[1]) * $quantity;
+                                                            $displayName = trim($matches[2]);
+                                                        }
+                                                    @endphp
+                                                    
+                                                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-200">
+                                                        📌 
+                                                        @if($displayQty > 1)
+                                                            <strong class="text-gray-900 mr-1 font-black bg-gray-200/80 px-1 rounded-sm">{{ $displayQty }}x</strong>
+                                                        @endif
+                                                        {{ $displayName }}
+                                                    </span>
+                                                @endforeach
+
+                                                @if(!empty($perMenuNote))
+                                                    <div class="w-full mt-0.5">
+                                                        <span class="text-[10px] text-orange-600 bg-orange-50 font-bold px-1.5 py-0.5 rounded-sm">
+                                                            📝 "{{ $perMenuNote }}"
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-600 whitespace-nowrap pt-0.5">
+                                        Rp {{ number_format($totalPrice, 0, ',', '.') }}
+                                    </span>
                                 </div>
-                                <span class="text-xs font-bold text-gray-600 whitespace-nowrap pt-0.5">
-                                    Rp {{ number_format($item['price'] * $item['qty'], 0, ',', '.') }}
-                                </span>
                             </div>
                         @endforeach
                     </div>
@@ -160,7 +208,6 @@
                             </span>
                         </div>
 
-                        {{-- TAMPILKAN CATATAN TRANSAKSI REKAP GLOBAL --}}
                         @if(!empty($order['notes']))
                             @php
                                 $cleanNotesText = str_replace('Nama Pelanggan: ' . $order['customer_name'] . ' | ', '', $order['notes']);
@@ -211,6 +258,6 @@
                 document.getElementById('antrean-container').innerHTML = newContent;
             })
             .catch(err => console.warn('Gagal memuat otomatis data antrean:', err));
-    }, 5000); // Mengecek ke database setiap 5 detik
+    }, 5000);
 </script>
 @endsection

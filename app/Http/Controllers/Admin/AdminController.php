@@ -46,18 +46,17 @@ class AdminController extends Controller
                 $dbMenuName = $dbItem->menu ? $dbItem->menu->name : 'Menu';
                 
                 $toppingsList = [];
+                $seblakBasics = []; 
                 $cleanFlavor = '';
 
-                // 1. Ambil & Bersihkan Input Varian Rasa dari JSON jika ada
+                // 1. Ambil & Bersihkan Input Varian Rasa Minuman
                 $flavorInput = isset($options['flavor']) ? strtolower($options['flavor']) : '';
 
-                // 2. FIXED CROSS-MAPPING GUARD (Koreksi Klasifikasi Brand vs Rasa)
                 if (!empty($flavorInput)) {
                     $isBuah = (str_contains($flavorInput, 'peras') || str_contains($flavorInput, 'orange') || str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga') || str_contains($flavorInput, 'nipis'));
                     $isKopi = (str_contains($flavorInput, 'cappuccino') || str_contains($flavorInput, 'mocacinno') || str_contains($flavorInput, 'moka') || str_contains($flavorInput, 'vanilla'));
                     $isPopIceFlavor = (str_contains($flavorInput, 'taro') || str_contains($flavorInput, 'avocado') || str_contains($flavorInput, 'permen') || str_contains($flavorInput, 'bubble') || str_contains($flavorInput, 'chocolate') || str_contains($flavorInput, 'coklat'));
 
-                    // Tentukan Nama Menu Utama yang Akurat
                     if ($isBuah) {
                         $realMenuName = 'Nutrisari';
                     } elseif ($isKopi) {
@@ -68,7 +67,6 @@ class AdminController extends Controller
                         $realMenuName = $dbMenuName;
                     }
 
-                    // 3. MAPPING TEKS VARIAN RASA UNTUK DASHBOARD KASIR
                     if (str_contains($flavorInput, 'peras')) $cleanFlavor = "Jeruk Peras";
                     elseif (str_contains($flavorInput, 'american') || str_contains($flavorInput, 'sweet_orange')) $cleanFlavor = "American Sweet Orange";
                     elseif (str_contains($flavorInput, 'mango') || str_contains($flavorInput, 'mangga')) $cleanFlavor = "Sweet Mango";
@@ -79,24 +77,36 @@ class AdminController extends Controller
                     else $cleanFlavor = ucwords(str_replace(['_', '-'], ' ', $options['flavor']));
 
                     if ($cleanFlavor !== 'Original') {
-                        $toppingsList[] = "Rasa: " . $cleanFlavor;
+                        $seblakBasics[] = "Rasa: " . $cleanFlavor;
                     }
                 } else {
                     $realMenuName = $dbMenuName;
                 }
 
-                // A. KUSTOMISASI SEBLAK
+                // 2. AMBIL DATA KUAH & PEDAS SEBLAK (Masuk ke array basics)
                 if (str_contains(strtolower($realMenuName), 'seblak')) {
-                    $spicyLevel = isset($options['spicy']) ? (int)$options['spicy'] : $dbItem->spicy_level;
+                    $soupName = !empty($options['soup']) ? $options['soup'] : (!empty($dbItem->soup) ? $dbItem->soup : '');
+                    if (!empty($soupName)) {
+                        $seblakBasics[] = "Kuah: " . $soupName;
+                    }
+
+                    $spicyLevel = isset($options['spicy']) && $options['spicy'] !== '' ? (int)$options['spicy'] : (int)$dbItem->spicy_level;
                     if ($spicyLevel > 0) {
-                        $toppingsList[] = "🌶️ Level " . $spicyLevel;
+                        $seblakBasics[] = "Level " . $spicyLevel;
                     }
                 }
 
-                // B. TOPPING TAMBAHAN
-                if (!empty($options['toppings']) && is_array($options['toppings'])) {
-                    foreach ($options['toppings'] as $topping) {
-                        $toppingsList[] = $topping['name'] ?? $topping;
+                // 3. AMBIL DATA TOPPING TAMBAHAN
+                if (!empty($options['toppings'])) {
+                    if (is_array($options['toppings'])) {
+                        foreach ($options['toppings'] as $topping) {
+                            $toppingsList[] = $topping['name'] ?? $topping;
+                        }
+                    } elseif (is_string($options['toppings'])) {
+                        $explodedToppings = explode(',', $options['toppings']);
+                        foreach ($explodedToppings as $topStr) {
+                            $toppingsList[] = trim($topStr);
+                        }
                     }
                 }
 
@@ -107,8 +117,8 @@ class AdminController extends Controller
                     'price' => $dbItem->price,
                     'notes' => $dbItem->notes,
                     'custom' => [
-                        'level' => isset($options['spicy']) ? (int)$options['spicy'] : 0,
-                        'toppings' => $toppingsList
+                        'basics' => $seblakBasics, 
+                        'toppings' => $toppingsList 
                     ]
                 ];
             }

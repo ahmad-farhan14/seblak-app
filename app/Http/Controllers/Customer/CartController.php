@@ -88,10 +88,8 @@ class CartController extends Controller
                 $orderItem = new OrderItem();
                 $orderItem->order_id = $order->id;
                 
-                // SAFE-GUARD: Mengambil ID menu dan memvalidasi ke database agar tidak crash jika ada data janggal
                 $menuId = $item['menu_id'] ?? null;
                 if (!$menuId || !\App\Models\Menu::where('id', $menuId)->exists()) {
-                    // Jika menu_id kosong/rusak, coba fallback cari menu berdasarkan kecocokan string nama
                     $fallbackMenu = \App\Models\Menu::where('name', 'like', '%' . ($item['name'] ?? '') . '%')->first();
                     $menuId = $fallbackMenu ? $fallbackMenu->id : \App\Models\Menu::first()->id;
                 }
@@ -99,7 +97,25 @@ class CartController extends Controller
                 $orderItem->menu_id = $menuId;
                 $orderItem->qty = $item['quantity'] ?? 1;
                 $orderItem->price = $item['price'];
-                $orderItem->notes = isset($item['options']) ? json_encode($item['options']) : null;
+
+                // --- SAKTI GUARD: RE-FORMAT DATA TOPPING DARI ALPINE.JS KE STRING QUANTITY ---
+                $options = $item['options'] ?? [];
+                if (!empty($options['toppings']) && is_array($options['toppings'])) {
+                    $formattedToppings = [];
+                    foreach ($options['toppings'] as $topObj) {
+                        $topName = $topObj['name'] ?? null;
+                        $topQty = isset($topObj['qty']) ? (int)$topObj['qty'] : 1;
+                        
+                        if ($topName) {
+                            // Satukan objek menjadi format string "4x Kerupuk jengkol secentong"
+                            $formattedToppings[] = $topQty . 'x ' . $topName;
+                        }
+                    }
+                    // Ubah array data topping menjadi sebaris string terpisah koma
+                    $options['toppings'] = implode(', ', $formattedToppings);
+                }
+
+                $orderItem->notes = json_encode($options);
                 $orderItem->save();
             }
 
