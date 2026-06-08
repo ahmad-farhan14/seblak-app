@@ -13,7 +13,6 @@ return [
     | to use as your default connection for all database work. Of course
     | you may use many connections at once using the Database library.
     |
-    |
     */
 
     'default' => env('DB_CONNECTION', 'mysql'),
@@ -27,11 +26,9 @@ return [
     | Of course, examples of configuring each database platform that is
     | supported by Laravel is shown below to make development simple.
     |
-    |
     | All database work in Laravel is done through the PHP PDO facilities
     | so make sure you have the driver for your particular database of
     | choice installed on your machine before you begin development.
-    |
     |
     */
 
@@ -48,12 +45,12 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
-            // MENEMBAK LANGSUNG DATA CLOUD KARENA ENVIRONMENT VARIABLE RAILWAY SEDANG BUGGY
-            'host' => 'mysql.railway.internal',
-            'port' => 3306,
-            'database' => 'railway',
-            'username' => 'root',
-            'password' => 'YINnlbSPNsgAHYGXGnlJwUwCiAqqEPzf',
+            // SUDAH DINAMIS: membaca .env laptop saat di localhost, membaca Variables saat di Railway
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8',
             'collation' => 'utf8_unicode_ci',
@@ -107,7 +104,6 @@ return [
     | your application. Using this information, we can determine which of
     | the migrations on disk haven't actually been run in the database.
     |
-    |
     */
 
     'migrations' => 'migrations',
@@ -120,7 +116,6 @@ return [
     | Redis is an open source, fast, and advanced key-value store that also
     | provides a richer body of commands than a typical key-value system
     | such as APC or Memcached. Laravel makes it easy to dig right in.
-    |
     |
     */
 
