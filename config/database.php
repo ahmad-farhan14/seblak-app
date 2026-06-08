@@ -53,7 +53,7 @@ return [
             'port' => 3306,
             'database' => 'railway',
             'username' => 'root',
-            'password' => 'tskZxVDRCebAfskUJvHXzagSNKMSjtOB',
+            'password' => 'YINnlbSPNsgAHYGXGnlJwUwCiAqqEPzf',
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8',
             'collation' => 'utf8_unicode_ci',
