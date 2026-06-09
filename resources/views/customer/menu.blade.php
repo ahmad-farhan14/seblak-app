@@ -74,7 +74,8 @@
                                 </div>
                             </div>
                             <div class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
-                                <img src="{{ $menu->image }}" class="w-full h-full object-cover">
+                                {{-- FIXED: Sudah menggunakan asset() agar gambar lokal terbaca sempurna --}}
+                                <img src="{{ asset($menu->image) }}" class="w-full h-full object-cover">
                             </div>
                         </div>
                     @endforeach
@@ -370,7 +371,6 @@ function menuSystem() {
             
             const cartItem = {
                 id: 'custom-' + Date.now(),
-                // FIXED: Mempertahankan ID asli menu dari database agar tidak memicu Integrity Constraint Error!
                 menu_id: this.selectedMenu.id, 
                 name: menuName,
                 price: this.totalCalculatedPrice,

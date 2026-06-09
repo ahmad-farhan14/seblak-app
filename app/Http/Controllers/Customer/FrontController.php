@@ -30,14 +30,14 @@ class FrontController extends Controller
                 'name' => 'Pop Ice Chocolate',
                 'description' => 'Minuman es blender segar dengan rasa coklat yang manis.',
                 'price' => 5000,
-                'image' => asset('images/coklat.jpg')
+                'image' => asset('images/popicecklt.jpeg')
             ],
             (object)[
                 'id' => 998,
                 'name' => 'Pop Ice Mangga',
                 'description' => 'Sensasi es blender rasa buah mangga segar dan manis.',
                 'price' => 5000,
-                'image' => asset('images/mangga.jpg')
+                'image' => asset('images/popicemgg.jpeg')
             ]
         ];
 
@@ -80,9 +80,9 @@ class FrontController extends Controller
                 'name' => 'Minuman',
                 'slug' => 'minuman',
                 'menus' => [
-                    (object)['id' => 4, 'name' => 'Nutrisari', 'description' => 'Minuman varian buah segar instan kaya vitamin C.', 'price' => 5000, 'image' => 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500'],
-                    (object)['id' => 999, 'name' => 'Pop Ice', 'description' => 'Silakan pilih varian rasa.', 'price' => 5000, 'image' => asset('images/coklat.jpg')],
-                    (object)['id' => 888, 'name' => 'Good Day', 'description' => 'Silakan pilih varian rasa kopi.', 'price' => 5000, 'image' => '/images/good-day.jpg']
+                    (object)['id' => 4, 'name' => 'Nutrisari', 'description' => 'Minuman varian buah segar instan kaya vitamin C.', 'price' => 5000, 'image' => '/images/nutrisari.jpeg'],
+                    (object)['id' => 999, 'name' => 'Pop Ice', 'description' => 'Silakan pilih varian rasa.', 'price' => 5000, 'image' => asset('images/popicecklt.jpeg')],
+                    (object)['id' => 888, 'name' => 'Good Day', 'description' => 'Silakan pilih varian rasa good day.', 'price' => 5000, 'image' => '/images/goodday.jpeg']
                 ]
             ]
         ];

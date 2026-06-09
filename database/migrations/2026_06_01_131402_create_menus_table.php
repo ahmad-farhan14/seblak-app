@@ -16,6 +16,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('name');
+            $table->string('slug')->unique()->nullable(); // <--- FIXED: Kolom slug sudah ditambahkan di sini
             $table->text('description')->nullable();
             $table->string('image')->nullable();
             $table->integer('price')->default(0);

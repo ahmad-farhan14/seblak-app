@@ -15,7 +15,7 @@ class MenuSeeder extends Seeder
         DB::table('categories')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 2. Isi data tabel categories (Sudah aman pakai slug)
+        // 2. Isi data tabel categories
         DB::table('categories')->insert([
             [
                 'id' => 1, 
@@ -33,7 +33,7 @@ class MenuSeeder extends Seeder
             ],
         ]);
 
-        // 3. PERBAIKAN: Isi data menus TANPA kolom is_available agar bebas dari error
+        // 3. Isi data menus (Sudah diperbaiki jalurnya mengarah ke folder images/)
         DB::table('menus')->insert([
             [
                 'id' => 1,
@@ -41,7 +41,7 @@ class MenuSeeder extends Seeder
                 'name' => 'Seblak Spesial',
                 'slug' => 'seblak-spesial',
                 'price' => 15000,
-                'image' => 'seblak.jpg',
+                'image' => 'images/seblak.jpg',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
@@ -51,37 +51,47 @@ class MenuSeeder extends Seeder
                 'name' => 'Seblak Kuah Jeletot',
                 'slug' => 'seblak-kuah-jeletot',
                 'price' => 15000,
-                'image' => 'seblak2.jpg',
+                'image' => 'images/seblak2.jpg',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'id' => 3,
                 'category_id' => 2,
-                'name' => 'Es Teh Manis',
-                'slug' => 'es-teh-manis',
+                'name' => 'Good Day Ice',
+                'slug' => 'good-day-ice',
                 'price' => 5000,
-                'image' => 'esteh.jpg',
+                'image' => 'images/goodday.jpeg',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'id' => 4,
                 'category_id' => 2,
-                'name' => 'Vanilla Latte',
-                'slug' => 'vanilla-latte',
+                'name' => 'Pop Ice Chocolate',
+                'slug' => 'pop-ice-chocolate',
                 'price' => 5000,
-                'image' => 'vanilla.jpg',
+                'image' => 'images/popicecklt.jpeg',
                 'created_at' => now(),
                 'updated_at' => now()
-            ], // ID 4 andalan kita
+            ], 
             [
                 'id' => 5,
                 'category_id' => 2,
-                'name' => 'Air Mineral',
-                'slug' => 'air-mineral',
-                'price' => 4000,
-                'image' => 'air.jpg',
+                'name' => 'Pop Ice Mangga',
+                'slug' => 'pop-ice-mangga',
+                'price' => 5000,
+                'image' => 'images/popicemgg.jpeg',
+                'created_at' => now(),
+                'updated_at' => now()
+            ],
+            [
+                'id' => 6,
+                'category_id' => 2,
+                'name' => 'Nutrisari Dingin',
+                'slug' => 'nutrisari-dingin',
+                'price' => 5000,
+                'image' => 'images/nutrisari.jpeg',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
